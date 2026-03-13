@@ -21,6 +21,7 @@ public class User {
     private String name;
 
     @Column(unique = true)
+
     private String providerId; // 구글 sub
 
     private String provider;   // "google"
