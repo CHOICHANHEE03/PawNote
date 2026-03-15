@@ -1,4 +1,4 @@
-package com.pawnote.auth.dto;
+package com.pawnote.auth.dto.google;
 
 import lombok.Getter;
 

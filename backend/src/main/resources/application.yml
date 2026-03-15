@@ -27,3 +27,9 @@ naver:
   client-secret: ${NAVER_CLIENT_SECRET}
   redirect-uri: ${NAVER_REDIRECT_URI}
   app-redirect-uri: ${NAVER_APP_REDIRECT_URI}
+
+kakao:
+  client-id: ${KAKAO_CLIENT_ID}
+  client-secret: ${KAKAO_CLIENT_SECRET}
+  redirect-uri: ${KAKAO_REDIRECT_URI}
+  app-redirect-uri: ${KAKAO_APP_REDIRECT_URI}

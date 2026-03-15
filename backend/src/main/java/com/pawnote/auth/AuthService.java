@@ -5,8 +5,13 @@ import com.pawnote.auth.dto.AuthResponse;
 import com.pawnote.auth.google.GoogleTokenVerifier;
 import com.pawnote.auth.jwt.JwtTokenProvider;
 import com.pawnote.auth.naver.TempNaverLoginStore;
+import com.pawnote.auth.dto.kakao.KakaoLoginRequest;
+import com.pawnote.auth.dto.kakao.KakaoUserResponse;
+import com.pawnote.auth.kakao.KakaoAuthService;
+import com.pawnote.auth.kakao.TempKakaoLoginStore;
 import com.pawnote.user.User;
 import com.pawnote.user.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +34,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final TempNaverLoginStore tempNaverLoginStore;
+    private final KakaoAuthService kakaoAuthService;
+    private final TempKakaoLoginStore tempKakaoLoginStore;
 
     @Value("${naver.client-id}")
     private String naverClientId;
@@ -41,6 +48,9 @@ public class AuthService {
 
     @Value("${naver.app-redirect-uri}")
     private String naverAppRedirectUri;
+
+    @Value("${KAKAO_APP_REDIRECT_URI}")
+    private String kakaoAppRedirectUri;
 
     private final WebClient webClient = WebClient.builder().build();
 
@@ -222,5 +232,91 @@ public class AuthService {
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+    @Transactional
+    public String handleKakaoCallback(String code) {
+        try {
+            log.info("카카오 콜백 처리 시작");
+            log.info("인가 코드 code={}", code);
+
+            KakaoUserResponse kakaoUser = kakaoAuthService.login(code);
+
+            String providerId = String.valueOf(kakaoUser.getId());
+
+            String email = null;
+            String name = null;
+
+            if (kakaoUser.getKakaoAccount() != null) {
+                email = kakaoUser.getKakaoAccount().getEmail();
+
+                if (kakaoUser.getKakaoAccount().getProfile() != null) {
+                    name = kakaoUser.getKakaoAccount().getProfile().getNickname();
+                }
+            }
+
+            if (name == null || name.isBlank()) {
+                name = "카카오사용자";
+            }
+
+            if (email == null || email.isBlank()) {
+                email = providerId + "@kakao.local";
+            }
+
+            final String finalEmail = email;
+            final String finalName = name;
+
+            log.info("카카오 사용자 정보 providerId={}, email={}, name={}", providerId, finalEmail, finalName);
+
+            User user = userRepository.findByProviderAndProviderId("kakao", providerId)
+                    .orElseGet(() -> {
+                        log.info("신규 카카오 사용자 저장");
+                        return userRepository.save(
+                                User.builder()
+                                        .provider("kakao")
+                                        .providerId(providerId)
+                                        .email(finalEmail)
+                                        .name(finalName)
+                                        .build()
+                        );
+                    });
+
+            String loginToken = tempKakaoLoginStore.save(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getName()
+            );
+
+            log.info("카카오 임시 loginToken 생성 완료: {}", loginToken);
+
+            String redirectUrl = kakaoAppRedirectUri + "?loginToken=" + encode(loginToken);
+
+            log.info("카카오 앱 리다이렉트 URL: {}", redirectUrl);
+
+            return redirectUrl;
+        } catch (Exception e) {
+            log.error("카카오 로그인 처리 중 오류", e);
+            throw new RuntimeException("카카오 로그인 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    public AuthResponse exchangeKakaoLogin(String loginToken) {
+        log.info("카카오 loginToken 교환 시작");
+
+        TempKakaoLoginStore.TempLoginData data = tempKakaoLoginStore.consume(loginToken);
+
+        if (data == null) {
+            throw new RuntimeException("유효하지 않거나 만료된 loginToken 입니다.");
+        }
+
+        String accessToken = jwtTokenProvider.createAccessToken(data.getUserId(), data.getEmail());
+
+        log.info("카카오 loginToken 교환 완료 userId={}", data.getUserId());
+
+        return new AuthResponse(
+                accessToken,
+                data.getUserId(),
+                data.getEmail(),
+                data.getName()
+        );
     }
 }
