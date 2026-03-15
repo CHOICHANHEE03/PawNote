@@ -2,6 +2,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Image } from "react-native";
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
 import NaverLoginButton from "@/components/auth/NaverLoginButton";
+import KakaoLoginButton from "@/components/auth/KakaoLoginButton";
 
 export default function Login() {
   return (
@@ -24,6 +25,7 @@ export default function Login() {
           <View style={{ width: "100%", gap: 12 }}>
             <GoogleLoginButton />
             <NaverLoginButton />
+            <KakaoLoginButton />
           </View>
         </View>
       </View>
