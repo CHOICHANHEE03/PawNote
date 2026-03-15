@@ -1,13 +1,16 @@
 package com.pawnote.auth;
 
 import com.pawnote.auth.dto.AuthResponse;
-import com.pawnote.auth.dto.GoogleLoginRequest;
-import com.pawnote.auth.dto.NaverLoginRequest;
+import com.pawnote.auth.dto.google.GoogleLoginRequest;
+import com.pawnote.auth.dto.naver.NaverLoginRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.pawnote.auth.dto.kakao.KakaoLoginRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.net.URI;
 
@@ -64,5 +67,21 @@ public class AuthController {
         AuthResponse response = authService.exchangeNaverLogin(request.getLoginToken());
         log.info("네이버 로그인 완료 userId={}", response.getUserId());
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/kakao/callback")
+    public void handleKakaoCallback(
+            @RequestParam String code,
+            HttpServletResponse response
+    ) throws Exception {
+        String redirectUrl = authService.handleKakaoCallback(code);
+        response.sendRedirect(redirectUrl);
+    }
+
+    @PostMapping("/kakao/exchange")
+    public ResponseEntity<AuthResponse> exchangeKakaoLogin(
+            @RequestBody KakaoLoginRequest request
+    ) {
+        return ResponseEntity.ok(authService.exchangeKakaoLogin(request.getLoginToken()));
     }
 }
