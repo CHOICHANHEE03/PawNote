@@ -90,7 +90,7 @@ export function useKakaoLogin() {
 
       // 토큰 저장 및 메인화면으로 이동
       await saveAccessToken(response.accessToken);
-      navigateAfterForeground("/home");
+      navigateAfterForeground("/recipe");
 
       return response;
     } finally {
