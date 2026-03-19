@@ -83,7 +83,7 @@ export function useNaverLogin() {
 
             await saveAccessToken(auth.accessToken);
 
-            navigateAfterForeground("/home");
+            navigateAfterForeground("/recipe");
         } catch (error) {
             console.error("네이버 로그인 오류:", error);
             Alert.alert("로그인 오류", "네이버 로그인 중 문제가 발생했습니다.");

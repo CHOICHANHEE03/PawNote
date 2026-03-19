@@ -39,7 +39,7 @@ export function useGoogleLogin() {
 
       await saveAccessToken(auth.accessToken);
 
-      router.replace("/home");
+      router.replace("/recipe");
     } catch (error) {
       console.error("구글 로그인 오류:", error);
       Alert.alert("로그인 오류", "구글 로그인 중 문제가 발생했습니다.");
