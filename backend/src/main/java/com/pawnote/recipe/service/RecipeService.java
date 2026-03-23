@@ -2,12 +2,17 @@ package com.pawnote.recipe.service;
 
 import com.pawnote.common.file.FileStorageService;
 import com.pawnote.recipe.dto.RecipeCreateRequest;
+import com.pawnote.recipe.dto.RecipeListItemResponse;
 import com.pawnote.recipe.entity.*;
 import com.pawnote.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +20,32 @@ public class RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final FileStorageService fileStorageService;
+
+    @Transactional(readOnly = true)
+    public List<RecipeListItemResponse> getRecipes(int page, int size) {
+        return recipeRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")))
+                .stream()
+                .map(this::toListItemResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RecipeListItemResponse> searchRecipes(String keyword, int page, int size) {
+        String trimmedKeyword = keyword == null ? "" : keyword.trim();
+
+        if (trimmedKeyword.isEmpty()) {
+            return getRecipes(page, size);
+        }
+
+        return recipeRepository.findByTitleContainingIgnoreCaseOrSubtitleContainingIgnoreCase(
+                        trimmedKeyword,
+                        trimmedKeyword,
+                        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
+                )
+                .stream()
+                .map(this::toListItemResponse)
+                .toList();
+    }
 
     @Transactional
     public Long createRecipe(RecipeCreateRequest request, MultipartFile image) throws Exception {
@@ -61,5 +92,16 @@ public class RecipeService {
         });
 
         return recipeRepository.save(recipe).getId();
+    }
+
+    private RecipeListItemResponse toListItemResponse(Recipe recipe) {
+        return new RecipeListItemResponse(
+                recipe.getId(),
+                recipe.getTitle(),
+                recipe.getSubtitle(),
+                recipe.getImageUrl(),
+                recipe.getVideoLink(),
+                recipe.getServings()
+        );
     }
 }
