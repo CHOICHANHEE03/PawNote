@@ -12,7 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -99,9 +104,74 @@ public class RecipeService {
                 recipe.getId(),
                 recipe.getTitle(),
                 recipe.getSubtitle(),
-                recipe.getImageUrl(),
+                resolveImageUrl(recipe.getImageUrl(), recipe.getVideoLink()),
                 recipe.getVideoLink(),
                 recipe.getServings()
         );
+    }
+
+    private String resolveImageUrl(String imageUrl, String videoLink) {
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            return imageUrl;
+        }
+        return extractYoutubeThumbnailUrl(videoLink);
+    }
+
+    private String extractYoutubeThumbnailUrl(String videoLink) {
+        return extractYoutubeVideoId(videoLink)
+                .map(videoId -> "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg")
+                .orElse(null);
+    }
+
+    private Optional<String> extractYoutubeVideoId(String videoLink) {
+        if (videoLink == null || videoLink.isBlank()) {
+            return Optional.empty();
+        }
+
+        try {
+            URI uri = URI.create(videoLink.trim());
+            String host = Optional.ofNullable(uri.getHost()).orElse("").toLowerCase();
+            String path = Optional.ofNullable(uri.getPath()).orElse("");
+
+            if (host.contains("youtu.be")) {
+                String videoId = path.startsWith("/") ? path.substring(1) : path;
+                return Optional.of(videoId).filter(id -> !id.isBlank());
+            }
+
+            if (!host.contains("youtube.com")) {
+                return Optional.empty();
+            }
+
+            Map<String, String> queryParams = parseQueryParams(uri.getQuery());
+            if (queryParams.containsKey("v")) {
+                String videoId = queryParams.get("v");
+                return Optional.ofNullable(videoId).filter(id -> !id.isBlank());
+            }
+
+            if (path.startsWith("/shorts/")) {
+                String videoId = path.substring("/shorts/".length());
+                return Optional.of(videoId).filter(id -> !id.isBlank());
+            }
+
+            if (path.startsWith("/embed/")) {
+                String videoId = path.substring("/embed/".length());
+                return Optional.of(videoId).filter(id -> !id.isBlank());
+            }
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
+
+        return Optional.empty();
+    }
+
+    private Map<String, String> parseQueryParams(String query) {
+        if (query == null || query.isBlank()) {
+            return Map.of();
+        }
+
+        return Arrays.stream(query.split("&"))
+                .map(param -> param.split("=", 2))
+                .filter(parts -> parts.length == 2)
+                .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1], (first, second) -> first));
     }
 }
