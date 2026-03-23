@@ -6,6 +6,7 @@ import { ENV } from "../constants/env";
 import { loginWithNaver } from "@/services/auth/authApi";
 import { saveAccessToken } from "@/utils/storage";
 import { useRouter } from "expo-router";
+import { useAuthStore } from "@/stores/authStore";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -15,6 +16,8 @@ export function useNaverLogin() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const pendingRoute = useRef<string | null>(null);
+
+    const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
     const navigateAfterForeground = (route: string) => {
         const current = AppState.currentState;
@@ -82,6 +85,8 @@ export function useNaverLogin() {
             console.log("backend auth result:", auth);
 
             await saveAccessToken(auth.accessToken);
+
+            setAccessToken(auth.accessToken);
 
             navigateAfterForeground("/recipe");
         } catch (error) {
