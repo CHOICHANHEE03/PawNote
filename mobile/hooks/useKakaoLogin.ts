@@ -6,6 +6,7 @@ import { loginWithKakao } from "@/services/auth/authApi";
 import type { AuthResponse } from "@/types/auth";
 import { saveAccessToken } from "@/utils/storage";
 import { useRouter } from "expo-router";
+import { useAuthStore } from "@/stores/authStore";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -13,6 +14,8 @@ export function useKakaoLogin() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const pendingRoute = useRef<string | null>(null);
+
+  const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
   const navigateAfterForeground = (route: string) => {
     const current = AppState.currentState;
@@ -90,6 +93,9 @@ export function useKakaoLogin() {
 
       // 토큰 저장 및 메인화면으로 이동
       await saveAccessToken(response.accessToken);
+
+      setAccessToken(response.accessToken);
+
       navigateAfterForeground("/recipe");
 
       return response;

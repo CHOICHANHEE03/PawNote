@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
+import { useCreateRecipe } from "@/hooks/useCreateRecipe";
 
 import {
     IngredientItem,
@@ -44,9 +45,12 @@ export default function RecipeCreateScreen() {
     const [focusedInput, setFocusedInput] = useState("");
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [invalidIngredientIds, setInvalidIngredientIds] = useState<string[]>([]);
 
     const scrollRef = useRef<ScrollView>(null);
     const insets = useSafeAreaInsets();
+
+    const { mutate, isPending } = useCreateRecipe();
 
     // 스크롤 핸들러 
     /** 포커스된 TextInput의 target(node handle)을 받아 자동 스크롤 */
@@ -120,6 +124,7 @@ export default function RecipeCreateScreen() {
 
     const handleRemoveIngredient = (id: number) => {
         setIngredients((prev) => prev.filter((item) => item.id !== id));
+        setInvalidIngredientIds((prev) => prev.filter((itemId) => itemId !== String(id)));
     };
 
     // 설명 핸들러 
@@ -140,38 +145,92 @@ export default function RecipeCreateScreen() {
     };
 
     // 저장
-    const handleSave = () => {
-        const fi = ingredients.filter((i) => i.name.trim() || i.amount.trim());
-        const fs = steps.map((s) => s.value.trim()).filter(Boolean);
+    const handleSaveRecipe = () => {
+        const newErrors: Record<string, string> = {};
+        const newInvalidIngredientIds: string[] = [];
 
-        let newErrors: Record<string, string> = {};
+        const trimmedTitle = title.trim();
+        const trimmedSubtitle = subtitle.trim();
+        const trimmedVideoLink = videoLink.trim();
 
-        if (!imageUri && !videoLink.trim()) newErrors.media = "사진이나 동영상을 최소 하나 등록해 주세요.";
-        if (!title.trim()) newErrors.title = "레시피 제목을 입력해 주세요.";
-        if (!servings || Number(servings) <= 0) newErrors.servings = "올바른 인분 수를 입력해 주세요.";
-        
-        if (categoryGroups.length === 0) {
-            newErrors.category = "카테고리 추가를 하나 이상 해주세요.";
-        } else {
-            // 카테고리가 있는데 비어있는 입력창이 있는지 확인
-            const invalids = ingredients.filter(i => !i.name.trim() || !i.amount.trim()).map(i => String(i.id));
-            if (invalids.length > 0) {
-                newErrors.ingredients = "모든 재료의 이름과 양을 입력해 주세요.";
-                newErrors.invalidIngredientIds = invalids.join(",");
-            }
+        if (!trimmedTitle) {
+            newErrors.title = "레시피 제목을 입력해주세요.";
         }
 
-        if (fs.length === 0) newErrors.steps = "레시피 조리 단계(스탭)를 하나 이상 입력해 주세요.";
+        if (!servings.trim()) {
+            newErrors.servings = "인분을 입력해주세요.";
+        }
+
+        if (ingredients.length === 0) {
+            newErrors.ingredients = "재료를 1개 이상 입력해주세요.";
+        }
+
+        ingredients.forEach((item) => {
+            if (!item.name.trim() || !item.amount.trim()) {
+                newInvalidIngredientIds.push(String(item.id));
+            }
+        });
+
+        const validSteps = steps.filter((item) => item.value.trim() !== "");
+        if (validSteps.length === 0) {
+            newErrors.steps = "조리 순서를 1개 이상 입력해주세요.";
+        }
+
+        if (imageUri && trimmedVideoLink) {
+            newErrors.media = "이미지 또는 영상 링크 중 하나만 등록할 수 있습니다.";
+        }
+
+        if (!imageUri && !trimmedVideoLink) {
+            newErrors.media = "이미지 또는 영상 링크 중 하나를 등록해주세요.";
+        }
 
         setErrors(newErrors);
+        setInvalidIngredientIds(newInvalidIngredientIds);
 
-        if (Object.keys(newErrors).length > 0) {
-            Alert.alert("필수 입력 누락", "필수 항목(빨간 글씨)을 모두 입력해 주세요.");
+        if (Object.keys(newErrors).length > 0 || newInvalidIngredientIds.length > 0) {
             return;
         }
 
-        console.log("저장:", { imageUri, videoLink, title, subtitle, servings, fi, fs });
-        Alert.alert("완료", "레시피가 성공적으로 등록/저장되었습니다!");
+        const payload = {
+            title: trimmedTitle,
+            subtitle: trimmedSubtitle,
+            servings: Number(servings) || 0,
+            videoLink: trimmedVideoLink || undefined,
+            ingredients: ingredients.map((item) => ({
+                name: item.name.trim(),
+                amount: item.amount.trim(),
+                unit: item.unit,
+                category: item.category.trim(),
+            })),
+            steps: validSteps.map((item, index) => ({
+                stepOrder: index + 1,
+                content: item.value.trim(),
+            })),
+        };
+
+        mutate({
+            payload,
+            imageUri: imageUri || undefined,
+        }, {
+            onSuccess: () => {
+                Alert.alert("완료", "레시피가 성공적으로 등록되었습니다!", [
+                    { text: "확인", onPress: () => router.back() }
+                ]);
+            },
+            onError: (error: any) => {
+                console.log("전체 에러:", error);
+                console.log("응답 코드:", error?.response?.status);
+                console.log("응답 데이터:", error?.response?.data);
+                console.log("에러 메시지:", error?.message);
+
+                const serverMessage = error?.response?.data?.message || (typeof error?.response?.data === 'string' ? error.response.data : undefined);
+
+                Alert.alert(
+                    "레시피 저장 실패",
+                    serverMessage || error.message || "레시피 저장에 실패했습니다."
+                );
+            }
+        });
     };
 
     const categoryGroups = groupByCategory(ingredients);
@@ -218,7 +277,11 @@ export default function RecipeCreateScreen() {
                     placeholderTextColor="#aaa"
                     value={title}
                     onChangeText={setTitle}
-                    onFocus={(e) => { focus("title"); handleInputFocusEvent(e.nativeEvent.target); }}
+                    onFocus={(e) => {
+                        focus("title");
+                        handleInputFocusEvent(e.nativeEvent.target);
+                        setErrors((prev) => ({ ...prev, title: "" }));
+                    }}
                     onBlur={blur}
                 />
                 {errors.title && <Text style={{ color: "red", fontSize: 12, marginTop: -8, marginBottom: 8, marginLeft: 4 }}>{errors.title}</Text>}
@@ -239,18 +302,25 @@ export default function RecipeCreateScreen() {
                     categoryGroups={categoryGroups}
                     focusedInput={focusedInput}
                     servings={servings}
-                    onServingsChange={setServings}
+                    onServingsChange={(text) => {
+                        setServings(text);
+                        setErrors((prev) => ({ ...prev, servings: "" }));
+                    }}
                     onOpenCategoryModal={() => setShowCategoryModal(true)}
                     onAddToCategory={handleAddToCategory}
-                    onIngredientChange={handleIngredientChange}
+                    onIngredientChange={(id, field, text) => {
+                        handleIngredientChange(id, field, text);
+                        setInvalidIngredientIds((prev) => prev.filter((itemId) => itemId !== String(id)));
+                        setErrors((prev) => ({ ...prev, ingredients: "" }));
+                    }}
                     onIngredientUnitChange={handleIngredientUnitChange}
                     onRemoveIngredient={handleRemoveIngredient}
                     onFocus={focus}
                     onBlur={blur}
                     onInputFocusEvent={handleInputFocusEvent}
-                    errorMessage={errors.category || errors.ingredients}
+                    errorMessage={errors.ingredients || errors.category}
                     servingsError={errors.servings}
-                    invalidIngredientIds={errors.invalidIngredientIds ? errors.invalidIngredientIds.split(",") : []}
+                    invalidIngredientIds={invalidIngredientIds}
                 />
 
                 <View style={styles.divider} />
@@ -269,12 +339,22 @@ export default function RecipeCreateScreen() {
                 />
 
                 {/* 하단 버튼 */}
-                <View style={styles.bottomButtonRow}>
-                    <Pressable style={styles.cancelButton} onPress={() => router.back()}>
+                <View style={[styles.bottomButtonRow, isPending && { opacity: 0.7 }]}>
+                    <Pressable
+                        style={styles.cancelButton}
+                        onPress={() => router.back()}
+                        disabled={isPending}
+                    >
                         <Text style={styles.cancelButtonText}>취소</Text>
                     </Pressable>
-                    <Pressable style={styles.saveButton} onPress={handleSave}>
-                        <Text style={styles.saveButtonText}>저장</Text>
+                    <Pressable
+                        style={styles.saveButton}
+                        onPress={handleSaveRecipe}
+                        disabled={isPending}
+                    >
+                        <Text style={styles.saveButtonText}>
+                            {isPending ? "저장 중..." : "저장"}
+                        </Text>
                     </Pressable>
                 </View>
 

@@ -12,6 +12,7 @@ interface Props {
     onBlur: () => void;
     onInputFocusEvent: (target: number, offset?: number) => void;
     mediaError?: string;
+    errorMessage?: string;
 }
 
 export default function MediaSection({
@@ -24,6 +25,7 @@ export default function MediaSection({
     onBlur,
     onInputFocusEvent,
     mediaError,
+    errorMessage,
 }: Props) {
     const trimmedLink = videoLink.trim();
 
@@ -156,7 +158,11 @@ export default function MediaSection({
                     </Text>
                 )}
             </Pressable>
-            {mediaError && <Text style={{ color: "red", fontSize: 12, marginTop: 4, marginBottom: 8, marginLeft: 4 }}>{mediaError}</Text>}
+            {(mediaError || errorMessage) && (
+                <Text style={{ color: "red", fontSize: 12, marginTop: 4, marginBottom: 8, marginLeft: 4 }}>
+                    {mediaError || errorMessage}
+                </Text>
+            )}
 
             <TextInput
                 style={[styles.field, focusedInput === "videoLink" && styles.fieldActive]}

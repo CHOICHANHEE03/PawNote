@@ -5,10 +5,13 @@ import { ENV } from "../constants/env";
 import { loginWithGoogle } from "@/services/auth/authApi";
 import { saveAccessToken } from "@/utils/storage";
 import { useRouter } from "expo-router";
+import { useAuthStore } from "@/stores/authStore";
 
 export function useGoogleLogin() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const setAccessToken = useAuthStore((state) => state.setAccessToken);
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -36,8 +39,11 @@ export function useGoogleLogin() {
       const auth = await loginWithGoogle({ idToken });
 
       console.log("backend auth result:", auth);
+      console.log("받은 accessToken:", auth.accessToken);
 
       await saveAccessToken(auth.accessToken);
+
+      setAccessToken(auth.accessToken);
 
       router.replace("/recipe");
     } catch (error) {
