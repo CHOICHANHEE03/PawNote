@@ -31,6 +31,7 @@ import MediaSection from "@/components/recipe/form/MediaSection";
 import IngredientSection from "@/components/recipe/form/IngredientSection";
 import CategoryModal from "@/components/recipe/form/CategoryModal";
 import StepsSection from "@/components/recipe/form/StepsSection";
+import MenuButton from "@/components/common/MenuButton";
 
 const ORANGE = "#F5A54C";
 
@@ -251,7 +252,7 @@ export default function RecipeEditScreen() {
 
     return (
         <View style={{ flex: 1 }}>
-            <BackHeader />
+            <BackHeader right={<MenuButton recipeId={recipeId} showEdit={false} />} />
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}

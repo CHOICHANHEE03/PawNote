@@ -215,3 +215,21 @@ export async function updateRecipe({
 
     return data;
 }
+
+export async function deleteRecipe({ id, accessToken }: { id: number; accessToken: string }) {
+    const response = await fetch(`${API_BASE_URL}/api/recipes/${id}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        const rawText = await response.text();
+        const error: any = new Error(rawText || "레시피 삭제 실패");
+        error.response = { status: response.status };
+        throw error;
+    }
+
+    return true;
+}
