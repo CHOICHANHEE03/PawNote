@@ -184,6 +184,13 @@ public class RecipeService {
         return recipe.getId();
     }
 
+    @Transactional
+    public void deleteRecipe(Long id) {
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."));
+        recipeRepository.delete(recipe);
+    }
+
     private RecipeListItemResponse toListItemResponse(Recipe recipe) {
         return new RecipeListItemResponse(
                 recipe.getId(),
