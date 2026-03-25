@@ -56,4 +56,24 @@ public class RecipeController {
 
         return Map.of("id", id);
     }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, Long> updateRecipe(
+            @PathVariable Long id,
+            @RequestPart("request") String requestJson,
+            @RequestPart(value = "image", required = false) MultipartFile image
+    ) throws Exception {
+
+        RecipeCreateRequest request =
+                objectMapper.readValue(requestJson, RecipeCreateRequest.class);
+
+        Long updatedId = recipeService.updateRecipe(id, request, image);
+
+        return Map.of("id", updatedId);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteRecipe(@PathVariable Long id) {
+        recipeService.deleteRecipe(id);
+    }
 }

@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { ORANGE, GRAY } from "./create.types";
+import { ORANGE, GRAY } from "./form.types";
 
 export const styles = StyleSheet.create({
     // 레이아웃 

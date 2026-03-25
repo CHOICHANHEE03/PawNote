@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Alert, AppState, AppStateStatus } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
-import { ENV } from "../constants/env";
+import { ENV } from "../../constants/env";
 import { loginWithNaver } from "@/services/auth/authApi";
 import { saveAccessToken } from "@/utils/storage";
 import { useRouter } from "expo-router";

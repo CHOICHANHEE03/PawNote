@@ -1,7 +1,7 @@
 import React from "react";
 import { TouchableOpacity, Text, ActivityIndicator, Alert } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useKakaoLogin } from "@/hooks/useKakaoLogin";
+import { useKakaoLogin } from "@/hooks/auth/useKakaoLogin";
 
 function KakaoLogo({ size = 22 }: { size?: number }) {
   return (

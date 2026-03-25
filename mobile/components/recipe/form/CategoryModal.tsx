@@ -1,7 +1,7 @@
 import { Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CATEGORIES } from "./create.types";
-import { styles } from "./create.styles";
+import { CATEGORIES } from "./form.types";
+import { styles } from "./form.styles";
 
 interface CategoryGroup {
     category: string;

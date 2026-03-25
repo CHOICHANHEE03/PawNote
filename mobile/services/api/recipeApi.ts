@@ -1,4 +1,4 @@
-import { IngredientUnit } from "@/components/recipe/create/create.types";
+import { IngredientUnit } from "@/components/recipe/form/form.types";
 
 export type RecipeListItem = {
     id: number;
@@ -165,4 +165,71 @@ export async function createRecipe({
     }
 
     return data;
+}
+
+type UpdateRecipeParams = {
+    id: number;
+    payload: RecipeCreatePayload;
+    imageUri?: string;
+    accessToken: string;
+};
+
+export async function updateRecipe({
+    id,
+    payload,
+    imageUri,
+    accessToken,
+}: UpdateRecipeParams) {
+    const formData = new FormData();
+    formData.append("request", JSON.stringify(payload));
+
+    if (imageUri) {
+        formData.append("image", {
+            uri: imageUri,
+            name: "recipe-image.jpg",
+            type: "image/jpeg",
+        } as any);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/recipes/${id}`, {
+        method: "PUT",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+    });
+
+    const rawText = await response.text();
+    let data = null;
+    try {
+        data = rawText ? JSON.parse(rawText) : null;
+    } catch (e) {
+        console.log("JSON 파싱 에러:", e);
+    }
+
+    if (!response.ok) {
+        const error: any = new Error(data?.message || rawText || "레시피 수정 실패");
+        error.response = { status: response.status, data: data || { message: rawText } };
+        throw error;
+    }
+
+    return data;
+}
+
+export async function deleteRecipe({ id, accessToken }: { id: number; accessToken: string }) {
+    const response = await fetch(`${API_BASE_URL}/api/recipes/${id}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        const rawText = await response.text();
+        const error: any = new Error(rawText || "레시피 삭제 실패");
+        error.response = { status: response.status };
+        throw error;
+    }
+
+    return true;
 }

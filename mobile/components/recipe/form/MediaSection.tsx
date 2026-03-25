@@ -1,6 +1,6 @@
 import { Image, Pressable, Text, TextInput, View } from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
-import { styles } from "./create.styles";
+import { styles } from "./form.styles";
 
 interface Props {
     imageUri: string;

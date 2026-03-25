@@ -1,6 +1,6 @@
 import { Pressable, Text, TextInput, View } from "react-native";
-import { StepItem } from "./create.types";
-import { styles } from "./create.styles";
+import { StepItem } from "./form.types";
+import { styles } from "./form.styles";
 
 interface Props {
     steps: StepItem[];

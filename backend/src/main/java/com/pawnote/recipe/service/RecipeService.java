@@ -12,8 +12,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -32,7 +32,7 @@ public class RecipeService {
     @Transactional(readOnly = true)
     public RecipeDetailResponse getRecipe(Long id) {
         Recipe recipe = recipeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipe not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."));
 
         return new RecipeDetailResponse(
                 recipe.getId(),
@@ -91,11 +91,11 @@ public class RecipeService {
         boolean hasVideo = request.getVideoLink() != null && !request.getVideoLink().isBlank();
 
         if (hasImage && hasVideo) {
-            throw new IllegalArgumentException("이미지와 영상 중 하나만 등록 가능");
+            throw new IllegalArgumentException("이미지와 영상 중 하나만 등록할 수 있습니다.");
         }
 
         if (!hasImage && !hasVideo) {
-            throw new IllegalArgumentException("이미지 또는 영상 하나는 필요");
+            throw new IllegalArgumentException("이미지 또는 영상 중 하나는 필수입니다.");
         }
 
         String imageUrl = fileStorageService.saveFile(image);
@@ -108,27 +108,87 @@ public class RecipeService {
                 .imageUrl(imageUrl)
                 .build();
 
-        // 재료 저장
-        request.getIngredients().forEach(item -> {
-            RecipeIngredient ingredient = RecipeIngredient.builder()
-                    .name(item.getName())
-                    .amount(item.getAmount())
-                    .unit(item.getUnit())
-                    .category(item.getCategory())
-                    .build();
-            recipe.addIngredient(ingredient);
-        });
+        if (request.getIngredients() != null) {
+            request.getIngredients().forEach(item -> {
+                RecipeIngredient ingredient = RecipeIngredient.builder()
+                        .name(item.getName())
+                        .amount(item.getAmount())
+                        .unit(item.getUnit())
+                        .category(item.getCategory())
+                        .build();
+                recipe.addIngredient(ingredient);
+            });
+        }
 
-        // 스텝 저장
-        request.getSteps().forEach(item -> {
-            RecipeStep step = RecipeStep.builder()
-                    .stepOrder(item.getStepOrder())
-                    .content(item.getContent())
-                    .build();
-            recipe.addStep(step);
-        });
+        if (request.getSteps() != null) {
+            request.getSteps().forEach(item -> {
+                RecipeStep step = RecipeStep.builder()
+                        .stepOrder(item.getStepOrder())
+                        .content(item.getContent())
+                        .build();
+                recipe.addStep(step);
+            });
+        }
 
         return recipeRepository.save(recipe).getId();
+    }
+
+    @Transactional
+    public Long updateRecipe(Long id, RecipeCreateRequest request, MultipartFile image) throws Exception {
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."));
+
+        boolean hasImage = image != null && !image.isEmpty();
+        boolean hasVideo = request.getVideoLink() != null && !request.getVideoLink().isBlank();
+
+        if (hasImage && hasVideo) {
+            throw new IllegalArgumentException("이미지와 영상 중 하나만 등록할 수 있습니다.");
+        }
+
+        recipe.setTitle(request.getTitle());
+        recipe.setSubtitle(request.getSubtitle());
+        recipe.setServings(request.getServings());
+
+        if (hasImage) {
+            recipe.setImageUrl(fileStorageService.saveFile(image));
+            recipe.setVideoLink(null);
+        } else if (hasVideo) {
+            recipe.setVideoLink(request.getVideoLink());
+            recipe.setImageUrl(null);
+        }
+
+        recipe.getIngredients().clear();
+        if (request.getIngredients() != null) {
+            request.getIngredients().forEach(item -> {
+                RecipeIngredient ingredient = RecipeIngredient.builder()
+                        .name(item.getName())
+                        .amount(item.getAmount())
+                        .unit(item.getUnit())
+                        .category(item.getCategory())
+                        .build();
+                recipe.addIngredient(ingredient);
+            });
+        }
+
+        recipe.getSteps().clear();
+        if (request.getSteps() != null) {
+            request.getSteps().forEach(item -> {
+                RecipeStep step = RecipeStep.builder()
+                        .stepOrder(item.getStepOrder())
+                        .content(item.getContent())
+                        .build();
+                recipe.addStep(step);
+            });
+        }
+
+        return recipe.getId();
+    }
+
+    @Transactional
+    public void deleteRecipe(Long id) {
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."));
+        recipeRepository.delete(recipe);
     }
 
     private RecipeListItemResponse toListItemResponse(Recipe recipe) {

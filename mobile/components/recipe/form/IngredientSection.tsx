@@ -1,7 +1,7 @@
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { CATEGORY_UNITS, ORANGE, GRAY, getCategoryEmoji, IngredientItem, IngredientUnit } from "./create.types";
-import { styles } from "./create.styles";
+import { CATEGORY_UNITS, ORANGE, GRAY, getCategoryEmoji, IngredientItem, IngredientUnit } from "./form.types";
+import { styles } from "./form.styles";
 
 interface CategoryGroup {
     category: string;
