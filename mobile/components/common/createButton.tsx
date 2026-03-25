@@ -1,27 +1,25 @@
-import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, StyleSheet } from "react-native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 type Props = {
     onPress: () => void;
-    icon?: string; // 기본 "+"
+    icon?: keyof typeof MaterialIcons.glyphMap;
 };
 
-export default function CreateButton({ onPress, icon = "+" }: Props) {
+export default function CreateButton({ onPress, icon = "edit" }: Props) {
     return (
         <TouchableOpacity style={styles.fab} onPress={onPress} activeOpacity={0.8}>
-            <Text style={styles.fabText}>{icon}</Text>
+            <MaterialIcons name={icon} size={26} color="#fff" />
         </TouchableOpacity>
     );
 }
 
 const styles = StyleSheet.create({
     fab: {
-        position: "absolute",
-        right: 20,
-        bottom: 30,
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: "#ff8a3d",
+        backgroundColor: "#F5A54C",
         justifyContent: "center",
         alignItems: "center",
         elevation: 5,
@@ -29,11 +27,5 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
-    },
-    fabText: {
-        color: "#fff",
-        fontSize: 32,
-        fontWeight: "700",
-        lineHeight: 34,
     },
 });
