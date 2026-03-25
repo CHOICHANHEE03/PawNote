@@ -1,5 +1,45 @@
 import { IngredientUnit } from "@/components/recipe/create.types";
 
+export type RecipeListItem = {
+    id: number;
+    title: string;
+    subtitle: string;
+    imageUrl?: string;
+    videoLink?: string;
+    createdAt: string;
+};
+
+type GetRecipesParams = {
+    accessToken: string;
+    page?: number;
+    size?: number;
+};
+
+export async function getRecipes({ accessToken, page = 0, size = 20 }: GetRecipesParams): Promise<RecipeListItem[]> {
+    const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+    const response = await fetch(`${API_BASE_URL}/api/recipes?page=${page}&size=${size}`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const rawText = await response.text();
+    let data = null;
+    try {
+        data = rawText ? JSON.parse(rawText) : null;
+    } catch (e) {
+        console.log("getRecipes JSON 파싱 에러:", e);
+    }
+
+    if (!response.ok) {
+        const error: any = new Error(data?.message || rawText || "레시피 목록 조회 실패");
+        error.response = { status: response.status, data };
+        throw error;
+    }
+
+    return data;
+}
+
 export type RecipeCreatePayload = {
     title: string;
     subtitle: string;
