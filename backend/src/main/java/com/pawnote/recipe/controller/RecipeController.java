@@ -1,6 +1,7 @@
 package com.pawnote.recipe.controller;
 
 import com.pawnote.recipe.dto.RecipeCreateRequest;
+import com.pawnote.recipe.dto.RecipeDetailResponse;
 import com.pawnote.recipe.dto.RecipeListItemResponse;
 import com.pawnote.recipe.service.RecipeService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,11 @@ public class RecipeController {
 
     private final RecipeService recipeService;
     private final ObjectMapper objectMapper;
+
+    @GetMapping("/{id}")
+    public RecipeDetailResponse getRecipe(@PathVariable Long id) {
+        return recipeService.getRecipe(id);
+    }
 
     @GetMapping
     public List<RecipeListItemResponse> getRecipes(
