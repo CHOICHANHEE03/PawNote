@@ -1,7 +1,7 @@
 import React from "react";
 import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useNaverLogin } from "@/hooks/useNaverLogin";
+import { useNaverLogin } from "@/hooks/auth/useNaverLogin";
 
 function NaverLogo({ size = 22 }: { size?: number }) {
   return (

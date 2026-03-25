@@ -9,12 +9,13 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import BackHeader from "@/components/header/BackHeader";
-import { useRecipeDetail } from "@/hooks/useRecipeDetail";
+import { useRecipeDetail } from "@/hooks/recipe/useRecipeDetail";
 import { styles, ORANGE } from "@/components/recipe/detail/detail.styles";
 import { extractYouTubeId, groupIngredients } from "@/components/recipe/detail/detail.types";
 import MediaSection from "@/components/recipe/detail/MediaSection";
 import IngredientsSection from "@/components/recipe/detail/IngredientsSection";
 import StepsSection from "@/components/recipe/detail/StepsSection";
+import MenuButton from "@/components/common/MenuButton";
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -53,7 +54,7 @@ export default function RecipeDetailScreen() {
 
   return (
     <View style={styles.root}>
-      <BackHeader />
+      <BackHeader right={<MenuButton recipeId={recipe.id} />} />
 
       {/* 영상 또는 이미지 (헤더 아래 고정) */}
       <MediaSection

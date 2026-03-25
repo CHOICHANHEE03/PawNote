@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { ENV } from "../constants/env";
+import { ENV } from "../../constants/env";
 import { loginWithGoogle } from "@/services/auth/authApi";
 import { saveAccessToken } from "@/utils/storage";
 import { useRouter } from "expo-router";

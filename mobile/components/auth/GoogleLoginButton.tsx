@@ -1,7 +1,7 @@
 import React from "react";
 import { TouchableOpacity, Text, View, ActivityIndicator } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useGoogleLogin } from "@/hooks/useGoogleLogin";
+import { useGoogleLogin } from "@/hooks/auth/useGoogleLogin";
 
 export default function GoogleLoginButton() {
   const { loading, onGoogleLogin } = useGoogleLogin();
@@ -48,4 +48,4 @@ export default function GoogleLoginButton() {
       )}
     </TouchableOpacity>
   );
-}
+}
