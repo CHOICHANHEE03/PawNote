@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useCreateRecipe } from "@/hooks/useCreateRecipe";
+import BackHeader from "@/components/header/BackHeader";
 
 import {
     IngredientItem,
@@ -22,12 +23,12 @@ import {
     StepItem,
     getDefaultUnit,
     groupByCategory,
-} from "@/components/recipe/create.types";
-import { styles } from "@/components/recipe/create.styles";
-import MediaSection from "@/components/recipe/MediaSection";
-import IngredientSection from "@/components/recipe/IngredientSection";
-import CategoryModal from "@/components/recipe/CategoryModal";
-import StepsSection from "@/components/recipe/StepsSection";
+} from "@/components/recipe/create/create.types";
+import { styles } from "@/components/recipe/create/create.styles";
+import MediaSection from "@/components/recipe/create/MediaSection";
+import IngredientSection from "@/components/recipe/create/IngredientSection";
+import CategoryModal from "@/components/recipe/create/CategoryModal";
+import StepsSection from "@/components/recipe/create/StepsSection";
 
 export default function RecipeCreateScreen() {
     // 상태 
@@ -238,134 +239,137 @@ export default function RecipeCreateScreen() {
     const blur = () => setFocusedInput("");
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-            <ScrollView
-                ref={scrollRef}
-                style={styles.container}
-                contentContainerStyle={[
-                    styles.content,
-                    { paddingBottom: Math.max(insets.bottom, 16) + 40 },
-                ]}
-                keyboardShouldPersistTaps="handled"
+        <View style={{ flex: 1 }}>
+            <BackHeader />
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
-                {/* 미디어 */}
-                <MediaSection
-                    imageUri={imageUri}
-                    videoLink={videoLink}
-                    focusedInput={focusedInput}
-                    onPickImage={handlePickImage}
-                    onVideoLinkChange={handleVideoLinkChange}
-                    onFocus={focus}
-                    onBlur={blur}
-                    onInputFocusEvent={handleInputFocusEvent}
-                    mediaError={errors.media}
-                />
-
-                <View style={styles.divider} />
-
-                {/* 제목 / 부제목 */}
-                <TextInput
-                    style={[
-                        styles.field,
-                        focusedInput === "title" && styles.fieldActive,
-                        errors.title ? { borderBottomColor: "red" } : {}
+                <ScrollView
+                    ref={scrollRef}
+                    style={styles.container}
+                    contentContainerStyle={[
+                        styles.content,
+                        { paddingBottom: Math.max(insets.bottom, 16) + 40 },
                     ]}
-                    placeholder="레시피 제목"
-                    placeholderTextColor="#aaa"
-                    value={title}
-                    onChangeText={setTitle}
-                    onFocus={(e) => {
-                        focus("title");
-                        handleInputFocusEvent(e.nativeEvent.target);
-                        setErrors((prev) => ({ ...prev, title: "" }));
-                    }}
-                    onBlur={blur}
-                />
-                {errors.title && <Text style={{ color: "red", fontSize: 12, marginTop: -8, marginBottom: 8, marginLeft: 4 }}>{errors.title}</Text>}
-                <TextInput
-                    style={[styles.field, focusedInput === "subtitle" && styles.fieldActive]}
-                    placeholder="부제목"
-                    placeholderTextColor="#aaa"
-                    value={subtitle}
-                    onChangeText={setSubtitle}
-                    onFocus={(e) => { focus("subtitle"); handleInputFocusEvent(e.nativeEvent.target); }}
-                    onBlur={blur}
-                />
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* 미디어 */}
+                    <MediaSection
+                        imageUri={imageUri}
+                        videoLink={videoLink}
+                        focusedInput={focusedInput}
+                        onPickImage={handlePickImage}
+                        onVideoLinkChange={handleVideoLinkChange}
+                        onFocus={focus}
+                        onBlur={blur}
+                        onInputFocusEvent={handleInputFocusEvent}
+                        mediaError={errors.media}
+                    />
 
-                <View style={styles.divider} />
+                    <View style={styles.divider} />
 
-                {/* 재료 */}
-                <IngredientSection
-                    categoryGroups={categoryGroups}
-                    focusedInput={focusedInput}
-                    servings={servings}
-                    onServingsChange={(text) => {
-                        setServings(text);
-                        setErrors((prev) => ({ ...prev, servings: "" }));
-                    }}
-                    onOpenCategoryModal={() => setShowCategoryModal(true)}
-                    onAddToCategory={handleAddToCategory}
-                    onIngredientChange={(id, field, text) => {
-                        handleIngredientChange(id, field, text);
-                        setInvalidIngredientIds((prev) => prev.filter((itemId) => itemId !== String(id)));
-                        setErrors((prev) => ({ ...prev, ingredients: "" }));
-                    }}
-                    onIngredientUnitChange={handleIngredientUnitChange}
-                    onRemoveIngredient={handleRemoveIngredient}
-                    onFocus={focus}
-                    onBlur={blur}
-                    onInputFocusEvent={handleInputFocusEvent}
-                    errorMessage={errors.ingredients || errors.category}
-                    servingsError={errors.servings}
-                    invalidIngredientIds={invalidIngredientIds}
-                />
+                    {/* 제목 / 부제목 */}
+                    <TextInput
+                        style={[
+                            styles.field,
+                            focusedInput === "title" && styles.fieldActive,
+                            errors.title ? { borderBottomColor: "red" } : {}
+                        ]}
+                        placeholder="레시피 제목"
+                        placeholderTextColor="#aaa"
+                        value={title}
+                        onChangeText={setTitle}
+                        onFocus={(e) => {
+                            focus("title");
+                            handleInputFocusEvent(e.nativeEvent.target);
+                            setErrors((prev) => ({ ...prev, title: "" }));
+                        }}
+                        onBlur={blur}
+                    />
+                    {errors.title && <Text style={{ color: "red", fontSize: 12, marginTop: -8, marginBottom: 8, marginLeft: 4 }}>{errors.title}</Text>}
+                    <TextInput
+                        style={[styles.field, focusedInput === "subtitle" && styles.fieldActive]}
+                        placeholder="부제목"
+                        placeholderTextColor="#aaa"
+                        value={subtitle}
+                        onChangeText={setSubtitle}
+                        onFocus={(e) => { focus("subtitle"); handleInputFocusEvent(e.nativeEvent.target); }}
+                        onBlur={blur}
+                    />
 
-                <View style={styles.divider} />
+                    <View style={styles.divider} />
 
-                {/* 설명 */}
-                <StepsSection
-                    steps={steps}
-                    focusedInput={focusedInput}
-                    onAddStep={handleAddStep}
-                    onStepChange={handleStepChange}
-                    onRemoveStep={handleRemoveStep}
-                    onFocus={focus}
-                    onBlur={blur}
-                    onInputFocusEvent={handleInputFocusEvent}
-                    errorMessage={errors.steps}
-                />
+                    {/* 재료 */}
+                    <IngredientSection
+                        categoryGroups={categoryGroups}
+                        focusedInput={focusedInput}
+                        servings={servings}
+                        onServingsChange={(text) => {
+                            setServings(text);
+                            setErrors((prev) => ({ ...prev, servings: "" }));
+                        }}
+                        onOpenCategoryModal={() => setShowCategoryModal(true)}
+                        onAddToCategory={handleAddToCategory}
+                        onIngredientChange={(id, field, text) => {
+                            handleIngredientChange(id, field, text);
+                            setInvalidIngredientIds((prev) => prev.filter((itemId) => itemId !== String(id)));
+                            setErrors((prev) => ({ ...prev, ingredients: "" }));
+                        }}
+                        onIngredientUnitChange={handleIngredientUnitChange}
+                        onRemoveIngredient={handleRemoveIngredient}
+                        onFocus={focus}
+                        onBlur={blur}
+                        onInputFocusEvent={handleInputFocusEvent}
+                        errorMessage={errors.ingredients || errors.category}
+                        servingsError={errors.servings}
+                        invalidIngredientIds={invalidIngredientIds}
+                    />
 
-                {/* 하단 버튼 */}
-                <View style={[styles.bottomButtonRow, isPending && { opacity: 0.7 }]}>
-                    <Pressable
-                        style={styles.cancelButton}
-                        onPress={() => router.back()}
-                        disabled={isPending}
-                    >
-                        <Text style={styles.cancelButtonText}>취소</Text>
-                    </Pressable>
-                    <Pressable
-                        style={styles.saveButton}
-                        onPress={handleSaveRecipe}
-                        disabled={isPending}
-                    >
-                        <Text style={styles.saveButtonText}>
-                            {isPending ? "저장 중..." : "저장"}
-                        </Text>
-                    </Pressable>
-                </View>
+                    <View style={styles.divider} />
 
-                {/* 카테고리 모달 */}
-                <CategoryModal
-                    visible={showCategoryModal}
-                    categoryGroups={categoryGroups}
-                    onSelectCategory={handleSelectCategory}
-                    onClose={() => setShowCategoryModal(false)}
-                />
-            </ScrollView>
-        </KeyboardAvoidingView>
+                    {/* 설명 */}
+                    <StepsSection
+                        steps={steps}
+                        focusedInput={focusedInput}
+                        onAddStep={handleAddStep}
+                        onStepChange={handleStepChange}
+                        onRemoveStep={handleRemoveStep}
+                        onFocus={focus}
+                        onBlur={blur}
+                        onInputFocusEvent={handleInputFocusEvent}
+                        errorMessage={errors.steps}
+                    />
+
+                    {/* 하단 버튼 */}
+                    <View style={[styles.bottomButtonRow, isPending && { opacity: 0.7 }]}>
+                        <Pressable
+                            style={styles.cancelButton}
+                            onPress={() => router.back()}
+                            disabled={isPending}
+                        >
+                            <Text style={styles.cancelButtonText}>취소</Text>
+                        </Pressable>
+                        <Pressable
+                            style={styles.saveButton}
+                            onPress={handleSaveRecipe}
+                            disabled={isPending}
+                        >
+                            <Text style={styles.saveButtonText}>
+                                {isPending ? "저장 중..." : "저장"}
+                            </Text>
+                        </Pressable>
+                    </View>
+
+                    {/* 카테고리 모달 */}
+                    <CategoryModal
+                        visible={showCategoryModal}
+                        categoryGroups={categoryGroups}
+                        onSelectCategory={handleSelectCategory}
+                        onClose={() => setShowCategoryModal(false)}
+                    />
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </View>
     );
 }

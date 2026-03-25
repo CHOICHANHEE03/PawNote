@@ -13,7 +13,7 @@ import {
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useRecipeList } from "@/hooks/useRecipeList";
-import RecipeCard from "@/components/recipe/RecipeCard";
+import RecipeCard from "@/components/recipe/create/RecipeCard";
 import CreateButton from "@/components/common/createButton";
 import { RecipeListItem } from "@/services/api/recipeApi";
 
