@@ -2,14 +2,17 @@ package com.pawnote.recipe.service;
 
 import com.pawnote.common.file.FileStorageService;
 import com.pawnote.recipe.dto.RecipeCreateRequest;
+import com.pawnote.recipe.dto.RecipeDetailResponse;
 import com.pawnote.recipe.dto.RecipeListItemResponse;
 import com.pawnote.recipe.entity.*;
 import com.pawnote.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
@@ -25,6 +28,35 @@ public class RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final FileStorageService fileStorageService;
+
+    @Transactional(readOnly = true)
+    public RecipeDetailResponse getRecipe(Long id) {
+        Recipe recipe = recipeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipe not found"));
+
+        return new RecipeDetailResponse(
+                recipe.getId(),
+                recipe.getTitle(),
+                recipe.getSubtitle(),
+                resolveImageUrl(recipe.getImageUrl(), recipe.getVideoLink()),
+                recipe.getVideoLink(),
+                recipe.getServings(),
+                recipe.getIngredients().stream()
+                        .map(ingredient -> new RecipeDetailResponse.IngredientItem(
+                                ingredient.getName(),
+                                ingredient.getAmount(),
+                                ingredient.getUnit(),
+                                ingredient.getCategory()
+                        ))
+                        .toList(),
+                recipe.getSteps().stream()
+                        .map(step -> new RecipeDetailResponse.StepItem(
+                                step.getStepOrder(),
+                                step.getContent()
+                        ))
+                        .toList()
+        );
+    }
 
     @Transactional(readOnly = true)
     public List<RecipeListItemResponse> getRecipes(int page, int size) {
