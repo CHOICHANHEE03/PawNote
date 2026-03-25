@@ -98,14 +98,14 @@ public class RecipeService {
             throw new IllegalArgumentException("이미지 또는 영상 중 하나는 필수입니다.");
         }
 
-        String imageUrl = fileStorageService.saveFile(image);
+        String imagePath = fileStorageService.saveFile(image);
 
         Recipe recipe = Recipe.builder()
                 .title(request.getTitle())
                 .subtitle(request.getSubtitle())
                 .servings(request.getServings())
                 .videoLink(request.getVideoLink())
-                .imageUrl(imageUrl)
+                .imageUrl(imagePath)
                 .build();
 
         if (request.getIngredients() != null) {
@@ -150,9 +150,11 @@ public class RecipeService {
         recipe.setServings(request.getServings());
 
         if (hasImage) {
+            fileStorageService.deleteFile(recipe.getImageUrl());
             recipe.setImageUrl(fileStorageService.saveFile(image));
             recipe.setVideoLink(null);
         } else if (hasVideo) {
+            fileStorageService.deleteFile(recipe.getImageUrl());
             recipe.setVideoLink(request.getVideoLink());
             recipe.setImageUrl(null);
         }
@@ -188,6 +190,8 @@ public class RecipeService {
     public void deleteRecipe(Long id) {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."));
+
+        fileStorageService.deleteFile(recipe.getImageUrl());
         recipeRepository.delete(recipe);
     }
 
@@ -202,9 +206,9 @@ public class RecipeService {
         );
     }
 
-    private String resolveImageUrl(String imageUrl, String videoLink) {
-        if (imageUrl != null && !imageUrl.isBlank()) {
-            return imageUrl;
+    private String resolveImageUrl(String imagePath, String videoLink) {
+        if (imagePath != null && !imagePath.isBlank()) {
+            return fileStorageService.toPublicUrl(imagePath);
         }
         return extractYoutubeThumbnailUrl(videoLink);
     }
