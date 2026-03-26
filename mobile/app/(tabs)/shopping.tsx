@@ -1,5 +1,6 @@
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
 import CreateButton from "@/components/common/createButton";
 
 type ShoppingNote = {
@@ -16,6 +17,7 @@ const DUMMY: ShoppingNote[] = [
 ];
 
 export default function ShoppingScreen() {
+    const router = useRouter();
     const isEmpty = DUMMY.length === 0;
 
     return (
@@ -45,7 +47,7 @@ export default function ShoppingScreen() {
             )}
 
             <View style={styles.fabArea}>
-                <CreateButton onPress={() => { }} />
+                <CreateButton onPress={() => router.push("/shopping/create" as any)} />
             </View>
         </View>
     );

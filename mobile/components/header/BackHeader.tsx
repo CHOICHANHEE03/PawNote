@@ -6,16 +6,17 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 interface Props {
   right?: React.ReactNode;
+  onBack?: () => void;
 }
 
-export default function BackHeader({ right }: Props) {
+export default function BackHeader({ right, onBack }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.wrapper, { paddingTop: insets.top }]}>
       <View style={styles.inner}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backBtn} onPress={onBack ?? (() => router.back())}>
           <MaterialIcons name="arrow-back-ios" size={20} color="#1a1a1a" />
           <Text style={styles.backText}>뒤로</Text>
         </TouchableOpacity>
