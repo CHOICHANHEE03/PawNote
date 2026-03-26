@@ -3,6 +3,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 export type ShoppingItem = {
     text: string;
     checked: boolean;
+    type?: "check" | "category";
 };
 
 export type ShoppingListCreatePayload = {
