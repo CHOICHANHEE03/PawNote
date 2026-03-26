@@ -108,7 +108,7 @@ export default function RecipeScreen() {
 
       {/* 작성 버튼 */}
       <View style={styles.fabArea}>
-        <CreateButton onPress={() => router.push("/recipe/create")} />
+        <CreateButton onPress={() => router.push("/recipe/create")} icon="add" />
       </View>
     </View>
   );
