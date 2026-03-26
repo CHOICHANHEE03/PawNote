@@ -7,7 +7,10 @@ import com.pawnote.shoppinglist.service.ShoppingListService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -23,10 +26,9 @@ public class ShoppingListController {
             @RequestBody(required = false) ShoppingListCreateRequest request
     ) {
         if (principal == null || principal.userId() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 정보가 없습니다.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication information is missing.");
         }
 
-        String title = request == null ? null : request.getTitle();
-        return shoppingListService.create(principal.userId(), title);
+        return shoppingListService.create(principal.userId(), request);
     }
 }
