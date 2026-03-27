@@ -45,6 +45,7 @@ export default function CalendarCreateScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [memoTitle, setMemoTitle] = useState("");
   const [memoContent, setMemoContent] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { mutate, isPending } = useCreateCalendarEntry();
 
@@ -74,10 +75,22 @@ export default function CalendarCreateScreen() {
     });
     if (!result.canceled) {
       setPhotos((prev) => [...prev, result.assets[0].uri]);
+      if (errors.photos) setErrors((prev) => ({ ...prev, photos: "" }));
     }
   };
 
   const handleSave = () => {
+    const newErrors: Record<string, string> = {};
+    if (photos.length === 0) newErrors.photos = "사진을 1장 이상 추가해주세요.";
+    if (!companion.trim()) newErrors.companion = "함께한 사람을 입력해주세요.";
+    if (recipes.length === 0) newErrors.recipes = "레시피를 1개 이상 추가해주세요.";
+    if (!memoTitle.trim()) newErrors.memoTitle = "메모 제목을 입력해주세요.";
+    if (!memoContent.trim()) newErrors.memoContent = "메모 내용을 입력해주세요.";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
     mutate(
       {
         payload: {
@@ -164,12 +177,19 @@ export default function CalendarCreateScreen() {
                 </View>
               ))}
               {photos.length < MAX_PHOTOS && (
-                <TouchableOpacity style={styles.photoAddBtn} onPress={handleAddPhoto} activeOpacity={0.7}>
-                  <MaterialIcons name="add-photo-alternate" size={28} color="#ccc" />
+                <TouchableOpacity
+                  style={[styles.photoAddBtn, errors.photos ? { borderWidth: 1.5, borderColor: "red" } : {}]}
+                  onPress={handleAddPhoto}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="add-photo-alternate" size={28} color={errors.photos ? "red" : "#ccc"} />
                   <Text style={styles.photoAddCount}>{photos.length}/{MAX_PHOTOS}</Text>
                 </TouchableOpacity>
               )}
             </View>
+            {errors.photos ? (
+              <Text style={{ color: "red", fontSize: 12, marginTop: 6, marginLeft: 4 }}>{errors.photos}</Text>
+            ) : null}
           </View>
 
           <View style={styles.divider} />
@@ -181,12 +201,18 @@ export default function CalendarCreateScreen() {
               <Text style={styles.sectionLabel}>누구랑 함께</Text>
             </View>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, errors.companion ? { borderColor: "red" } : {}]}
               placeholder="누구랑 함께 요리했나요? (예: 가족, 혼자)"
               placeholderTextColor="#ccc"
               value={companion}
-              onChangeText={setCompanion}
+              onChangeText={(text) => {
+                setCompanion(text);
+                if (errors.companion) setErrors((prev) => ({ ...prev, companion: "" }));
+              }}
             />
+            {errors.companion ? (
+              <Text style={{ color: "red", fontSize: 12, marginTop: 6, marginLeft: 4 }}>{errors.companion}</Text>
+            ) : null}
           </View>
 
           <View style={styles.divider} />
@@ -214,13 +240,20 @@ export default function CalendarCreateScreen() {
               </View>
             ))}
             <TouchableOpacity
-              style={[styles.addBtn, recipes.length > 0 && { marginTop: 10 }]}
+              style={[
+                styles.addBtn,
+                recipes.length > 0 && { marginTop: 10 },
+                errors.recipes ? { borderColor: "red" } : {},
+              ]}
               onPress={() => setShowRecipePicker(true)}
               activeOpacity={0.7}
             >
-              <MaterialIcons name="add" size={17} color={ORANGE} />
-              <Text style={styles.addBtnText}>레시피 추가</Text>
+              <MaterialIcons name="add" size={17} color={errors.recipes ? "red" : ORANGE} />
+              <Text style={[styles.addBtnText, errors.recipes ? { color: "red" } : {}]}>레시피 추가</Text>
             </TouchableOpacity>
+            {errors.recipes ? (
+              <Text style={{ color: "red", fontSize: 12, marginTop: 6, marginLeft: 4 }}>{errors.recipes}</Text>
+            ) : null}
           </View>
 
           <View style={styles.divider} />
@@ -232,21 +265,35 @@ export default function CalendarCreateScreen() {
               <Text style={styles.sectionLabel}>메모</Text>
             </View>
             <TextInput
-              style={[styles.textInput, styles.memoTitleInput]}
+              style={[styles.textInput, styles.memoTitleInput, errors.memoTitle ? { borderColor: "red" } : {}]}
               placeholder="제목"
               placeholderTextColor="#ccc"
               value={memoTitle}
-              onChangeText={setMemoTitle}
+              onChangeText={(text) => {
+                setMemoTitle(text);
+                if (errors.memoTitle) setErrors((prev) => ({ ...prev, memoTitle: "" }));
+              }}
             />
+            {errors.memoTitle ? (
+              <Text style={{ color: "red", fontSize: 12, marginTop: -6, marginBottom: 6, marginLeft: 4 }}>
+                {errors.memoTitle}
+              </Text>
+            ) : null}
             <TextInput
-              style={[styles.textInput, styles.memoContentInput]}
+              style={[styles.textInput, styles.memoContentInput, errors.memoContent ? { borderColor: "red" } : {}]}
               placeholder="오늘의 요리 기록을 남겨보세요."
               placeholderTextColor="#ccc"
               value={memoContent}
-              onChangeText={setMemoContent}
+              onChangeText={(text) => {
+                setMemoContent(text);
+                if (errors.memoContent) setErrors((prev) => ({ ...prev, memoContent: "" }));
+              }}
               multiline
               textAlignVertical="top"
             />
+            {errors.memoContent ? (
+              <Text style={{ color: "red", fontSize: 12, marginTop: 6, marginLeft: 4 }}>{errors.memoContent}</Text>
+            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -265,7 +312,10 @@ export default function CalendarCreateScreen() {
       <RecipePickerModal
         visible={showRecipePicker}
         selectedIds={recipes.map((r) => r.id)}
-        onSelect={(r) => setRecipes((prev) => [...prev, r])}
+        onSelect={(r) => {
+          setRecipes((prev) => [...prev, r]);
+          if (errors.recipes) setErrors((prev) => ({ ...prev, recipes: "" }));
+        }}
         onClose={() => setShowRecipePicker(false)}
       />
     </View>
