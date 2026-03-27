@@ -107,6 +107,50 @@ public class FileStorageService {
                 + encodePath(objectPath);
     }
 
+    public String normalizeObjectPath(String pathOrUrl) {
+        if (pathOrUrl == null || pathOrUrl.isBlank()) {
+            return null;
+        }
+
+        String value = pathOrUrl.trim();
+        if (!value.startsWith("http://") && !value.startsWith("https://")) {
+            return value;
+        }
+
+        String normalizedBase = supabaseUrl.endsWith("/")
+                ? supabaseUrl.substring(0, supabaseUrl.length() - 1)
+                : supabaseUrl;
+
+        String encodedBucket = UriUtils.encodePathSegment(bucket, StandardCharsets.UTF_8);
+        String encodedPrefix = normalizedBase + "/storage/v1/object/public/" + encodedBucket + "/";
+        if (value.startsWith(encodedPrefix)) {
+            return stripQueryAndFragment(value.substring(encodedPrefix.length()));
+        }
+
+        String rawPrefix = normalizedBase + "/storage/v1/object/public/" + bucket + "/";
+        if (value.startsWith(rawPrefix)) {
+            return stripQueryAndFragment(value.substring(rawPrefix.length()));
+        }
+
+        return value;
+    }
+
+    private String stripQueryAndFragment(String path) {
+        int queryIndex = path.indexOf('?');
+        int hashIndex = path.indexOf('#');
+        int cutIndex = -1;
+
+        if (queryIndex >= 0 && hashIndex >= 0) {
+            cutIndex = Math.min(queryIndex, hashIndex);
+        } else if (queryIndex >= 0) {
+            cutIndex = queryIndex;
+        } else if (hashIndex >= 0) {
+            cutIndex = hashIndex;
+        }
+
+        return cutIndex >= 0 ? path.substring(0, cutIndex) : path;
+    }
+
     private String buildObjectUri(String objectPath) {
         String normalizedBase = supabaseUrl.endsWith("/")
                 ? supabaseUrl.substring(0, supabaseUrl.length() - 1)
