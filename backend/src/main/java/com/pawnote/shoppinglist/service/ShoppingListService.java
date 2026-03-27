@@ -145,6 +145,13 @@ public class ShoppingListService {
         );
     }
 
+    @Transactional
+    public void delete(Long userId, Long shoppingListId) {
+        ShoppingList shoppingList = shoppingListRepository.findByIdAndUserId(shoppingListId, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shopping list not found."));
+        shoppingListRepository.delete(shoppingList);
+    }
+
     private List<ShoppingListItemResponse> toItemResponses(ShoppingList shoppingList) {
         return shoppingList.getItems().stream()
                 .map(item -> new ShoppingListItemResponse(

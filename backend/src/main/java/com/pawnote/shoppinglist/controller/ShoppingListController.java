@@ -10,6 +10,7 @@ import com.pawnote.shoppinglist.service.ShoppingListService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,6 +54,15 @@ public class ShoppingListController {
     ) {
         Long userId = extractUserId(principal);
         return shoppingListService.update(userId, id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteShoppingList(
+            @AuthenticationPrincipal JwtAuthenticationFilter.JwtUserPrincipal principal,
+            @PathVariable Long id
+    ) {
+        Long userId = extractUserId(principal);
+        shoppingListService.delete(userId, id);
     }
 
     @PostMapping
