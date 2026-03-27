@@ -1,0 +1,273 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import BackHeader from "@/components/header/BackHeader";
+import { useCreateCalendarEntry } from "@/hooks/calendar/useCreateCalendarEntry";
+import {
+  ORANGE,
+  MAX_PHOTOS,
+  SelectedRecipe,
+  parseDateParam,
+  dateToKey,
+  getDaysInMonth,
+} from "@/components/calendar/form/form.types";
+import { styles } from "@/components/calendar/form/form.styles";
+import DatePickerModal from "@/components/calendar/form/DatePickerModal";
+import RecipePickerModal from "@/components/calendar/form/RecipePickerModal";
+
+export default function CalendarCreateScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { date: dateParam } = useLocalSearchParams<{ date: string }>();
+  const initDate = parseDateParam(dateParam);
+
+  const [year, setYear] = useState(initDate.getFullYear());
+  const [month, setMonth] = useState(initDate.getMonth());
+  const [day, setDay] = useState(initDate.getDate());
+
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [companion, setCompanion] = useState("");
+  const [recipes, setRecipes] = useState<SelectedRecipe[]>([]);
+  const [showRecipePicker, setShowRecipePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [memoTitle, setMemoTitle] = useState("");
+  const [memoContent, setMemoContent] = useState("");
+
+  const { mutate, isPending } = useCreateCalendarEntry();
+
+  const handleMonthChange = (m: number) => {
+    setMonth(m);
+    const max = getDaysInMonth(year, m);
+    if (day > max) setDay(max);
+  };
+
+  const handleYearChange = (y: number) => {
+    setYear(y);
+    const max = getDaysInMonth(y, month);
+    if (day > max) setDay(max);
+  };
+
+  const handleAddPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("권한 필요", "갤러리 접근 권한을 허용해 주세요.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setPhotos((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  const handleSave = () => {
+    mutate(
+      {
+        payload: {
+          date: dateToKey(year, month, day),
+          companion: companion.trim() || undefined,
+          recipeIds: recipes.map((r) => r.id),
+          memoTitle: memoTitle.trim() || undefined,
+          memoContent: memoContent.trim() || undefined,
+        },
+        imageUris: photos,
+      },
+      {
+        onSuccess: () => {
+          Alert.alert("완료", "캘린더에 기록이 저장되었습니다!", [
+            { text: "확인", onPress: () => router.back() },
+          ]);
+        },
+        onError: (error: any) => {
+          const msg = error?.response?.data?.message || error.message || "저장에 실패했습니다.";
+          Alert.alert("저장 실패", msg);
+        },
+      }
+    );
+  };
+
+  return (
+    <View style={styles.screen}>
+      <BackHeader
+        right={
+          <TouchableOpacity
+            style={[styles.saveBtn, isPending && { opacity: 0.5 }]}
+            onPress={handleSave}
+            disabled={isPending}
+          >
+            <Text style={styles.saveBtnText}>{isPending ? "저장 중..." : "저장"}</Text>
+          </TouchableOpacity>
+        }
+      />
+
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 40, paddingTop: 10 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* 날짜 */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="calendar-today" size={15} color={ORANGE} />
+              <Text style={styles.sectionLabel}>기록할 날짜</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.dateSelector}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.dateSelectorText}>
+                {year}년 {month + 1}월 {day}일
+              </Text>
+              <MaterialIcons name="keyboard-arrow-down" size={20} color="#bbb" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* 사진 */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="photo-camera" size={15} color={ORANGE} />
+              <Text style={styles.sectionLabel}>사진</Text>
+              <Text style={styles.hint}>최대 {MAX_PHOTOS}장</Text>
+            </View>
+            <View style={styles.photoRow}>
+              {photos.map((uri, i) => (
+                <View key={i} style={styles.photoWrap}>
+                  <Image source={{ uri }} style={styles.photo} resizeMode="cover" />
+                  <TouchableOpacity
+                    style={styles.photoRemoveBtn}
+                    onPress={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                    hitSlop={6}
+                  >
+                    <MaterialIcons name="close" size={12} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {photos.length < MAX_PHOTOS && (
+                <TouchableOpacity style={styles.photoAddBtn} onPress={handleAddPhoto} activeOpacity={0.7}>
+                  <MaterialIcons name="add-photo-alternate" size={28} color="#ccc" />
+                  <Text style={styles.photoAddCount}>{photos.length}/{MAX_PHOTOS}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* 누구랑 함께*/}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="people" size={15} color={ORANGE} />
+              <Text style={styles.sectionLabel}>누구랑 함께</Text>
+            </View>
+            <TextInput
+              style={styles.textInput}
+              placeholder="누구랑 함께 요리했나요? (예: 가족, 혼자)"
+              placeholderTextColor="#ccc"
+              value={companion}
+              onChangeText={setCompanion}
+            />
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* 레시피 */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="restaurant-menu" size={15} color={ORANGE} />
+              <Text style={styles.sectionLabel}>레시피</Text>
+            </View>
+            {recipes.map((r, i) => (
+              <View key={r.id} style={[styles.recipeRow, i > 0 && styles.recipeRowBorder]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.recipeTitle} numberOfLines={1}>{r.title}</Text>
+                  {r.subtitle ? (
+                    <Text style={styles.recipeSubtitle} numberOfLines={1}>{r.subtitle}</Text>
+                  ) : null}
+                </View>
+                <TouchableOpacity
+                  onPress={() => setRecipes((prev) => prev.filter((x) => x.id !== r.id))}
+                  hitSlop={8}
+                >
+                  <MaterialIcons name="close" size={18} color="#ccc" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={[styles.addBtn, recipes.length > 0 && { marginTop: 10 }]}
+              onPress={() => setShowRecipePicker(true)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="add" size={17} color={ORANGE} />
+              <Text style={styles.addBtnText}>레시피 추가</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* 메모 */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="notes" size={15} color={ORANGE} />
+              <Text style={styles.sectionLabel}>메모</Text>
+            </View>
+            <TextInput
+              style={[styles.textInput, styles.memoTitleInput]}
+              placeholder="제목"
+              placeholderTextColor="#ccc"
+              value={memoTitle}
+              onChangeText={setMemoTitle}
+            />
+            <TextInput
+              style={[styles.textInput, styles.memoContentInput]}
+              placeholder="오늘의 요리 기록을 남겨보세요."
+              placeholderTextColor="#ccc"
+              value={memoContent}
+              onChangeText={setMemoContent}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <DatePickerModal
+        visible={showDatePicker}
+        year={year}
+        month={month}
+        day={day}
+        onYearChange={handleYearChange}
+        onMonthChange={handleMonthChange}
+        onDayChange={setDay}
+        onClose={() => setShowDatePicker(false)}
+      />
+
+      <RecipePickerModal
+        visible={showRecipePicker}
+        selectedIds={recipes.map((r) => r.id)}
+        onSelect={(r) => setRecipes((prev) => [...prev, r])}
+        onClose={() => setShowRecipePicker(false)}
+      />
+    </View>
+  );
+}

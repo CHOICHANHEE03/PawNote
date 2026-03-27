@@ -112,7 +112,7 @@ export default function CalendarScreen() {
             </ScrollView>
 
             <View style={styles.fabArea}>
-                <CreateButton onPress={() => { }} icon="edit-calendar" />
+                <CreateButton onPress={() => router.push(`/calendar/create?date=${dateKey(selectedDate)}` as any)} icon="edit-calendar" />
             </View>
         </View>
     );
