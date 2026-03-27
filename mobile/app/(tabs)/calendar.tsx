@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import MonthCalendar, { DatePhotoMap } from "@/components/calendar/MonthCalendar";
 import DayContent, { DayEntry } from "@/components/calendar/DayContent";
 import CreateButton from "@/components/common/createButton";
-import { useCalendarEntries } from "@/hooks/calendar/useCalendarEntries";
+import { useCalendarMonthEntries } from "@/hooks/calendar/useCalendarMonthEntries";
 import { useCalendarDayEntry } from "@/hooks/calendar/useCalendarDayEntry";
 import { useRecipeList } from "@/hooks/recipe/useRecipeList";
 import { useDeleteCalendarEntry } from "@/hooks/calendar/useDeleteCalendarEntry";
@@ -19,14 +19,17 @@ export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   // 달력 사진 맵
-  const { data: allEntries = [] } = useCalendarEntries();
+  const { data: monthEntries = [] } = useCalendarMonthEntries(
+    selectedDate.getFullYear(),
+    selectedDate.getMonth() + 1
+  );
   const photoMap = useMemo<DatePhotoMap>(() => {
     const map: DatePhotoMap = {};
-    allEntries.forEach((entry) => {
+    monthEntries.forEach((entry) => {
       if (entry.imageUrls.length > 0) map[entry.date] = entry.imageUrls;
     });
     return map;
-  }, [allEntries]);
+  }, [monthEntries]);
 
   // 선택된 날짜 기록
   const { data: dayEntries = [], isLoading: dayLoading } = useCalendarDayEntry(selectedDate);

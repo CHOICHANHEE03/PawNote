@@ -12,11 +12,19 @@ export type CalendarEntryResponse = {
   updatedAt: string;
 };
 
-export async function getCalendarEntries({ accessToken }: { accessToken: string }): Promise<CalendarEntryResponse[]> {
-  const response = await fetch(`${API_BASE_URL}/api/calendar`, {
+export async function getCalendarMonthEntries({
+  year,
+  month,
+  accessToken,
+}: {
+  year: number;
+  month: number;
+  accessToken: string;
+}): Promise<CalendarEntryResponse[]> {
+  const response = await fetch(`${API_BASE_URL}/api/calendar?year=${year}&month=${month}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
-  if (!response.ok) throw new Error("캘린더 목록 조회 실패");
+  if (!response.ok) throw new Error("캘린더 월별 조회 실패");
   return response.json();
 }
 
