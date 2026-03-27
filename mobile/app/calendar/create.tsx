@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,7 +16,9 @@ import * as ImagePicker from "expo-image-picker";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import BackHeader from "@/components/header/BackHeader";
 import { useCreateCalendarEntry } from "@/hooks/calendar/useCreateCalendarEntry";
+import { useUpdateCalendarEntry } from "@/hooks/calendar/useUpdateCalendarEntry";
 import { useCalendarDayEntry } from "@/hooks/calendar/useCalendarDayEntry";
+import { useRecipeList } from "@/hooks/recipe/useRecipeList";
 import {
   ORANGE,
   MAX_PHOTOS,
@@ -32,7 +34,10 @@ import RecipePickerModal from "@/components/calendar/form/RecipePickerModal";
 export default function CalendarCreateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { date: dateParam } = useLocalSearchParams<{ date: string }>();
+  const { date: dateParam, id: idParam } = useLocalSearchParams<{ date: string; id: string }>();
+
+  const isEdit = !!idParam;
+  const entryId = isEdit ? Number(idParam) : undefined;
   const initDate = parseDateParam(dateParam);
 
   const [year, setYear] = useState(initDate.getFullYear());
@@ -40,6 +45,7 @@ export default function CalendarCreateScreen() {
   const [day, setDay] = useState(initDate.getDate());
 
   const [photos, setPhotos] = useState<string[]>([]);
+  const [existingUrlSet, setExistingUrlSet] = useState<Set<string>>(new Set());
   const [companion, setCompanion] = useState("");
   const [recipes, setRecipes] = useState<SelectedRecipe[]>([]);
   const [showRecipePicker, setShowRecipePicker] = useState(false);
@@ -47,12 +53,41 @@ export default function CalendarCreateScreen() {
   const [memoTitle, setMemoTitle] = useState("");
   const [memoContent, setMemoContent] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [initialized, setInitialized] = useState(!isEdit);
 
-  const { mutate, isPending } = useCreateCalendarEntry();
+  const { mutate: createMutate, isPending: isCreating } = useCreateCalendarEntry();
+  const { mutate: updateMutate, isPending: isUpdating } = useUpdateCalendarEntry();
+  const isPending = isCreating || isUpdating;
 
   const selectedDate = new Date(year, month, day);
-  const { data: existingEntries = [] } = useCalendarDayEntry(selectedDate);
-  const isDuplicate = existingEntries.length > 0;
+  const { data: dayEntries = [] } = useCalendarDayEntry(selectedDate);
+  const { data: recipeList = [] } = useRecipeList();
+
+  // 수정 모드: 기존 데이터로 초기화
+  useEffect(() => {
+    if (!isEdit || initialized) return;
+    const raw = dayEntries.find((e) => e.id === entryId) ?? dayEntries[0];
+    if (!raw) return;
+
+    setPhotos(raw.imageUrls);
+    setExistingUrlSet(new Set(raw.imageUrls));
+    setCompanion(raw.companion ?? "");
+    setRecipes(
+      raw.recipeIds.map((id) => {
+        const found = recipeList.find((r) => r.id === id);
+        return { id, title: found?.title ?? String(id), subtitle: found?.subtitle };
+      })
+    );
+    setMemoTitle(raw.memoTitle ?? "");
+    setMemoContent(raw.memoContent ?? "");
+    setInitialized(true);
+  }, [dayEntries, recipeList, isEdit, initialized, entryId]);
+
+  // 수정: 날짜를 변경했을 때만 새 날짜에 기록이 있으면 중복/ 같은 날짜 허용
+  const currentDateKey = dateToKey(year, month, day);
+  const isDuplicate = isEdit
+    ? currentDateKey !== dateParam && dayEntries.length > 0
+    : dayEntries.length > 0;
 
   const handleMonthChange = (m: number) => {
     setMonth(m);
@@ -100,29 +135,60 @@ export default function CalendarCreateScreen() {
       return;
     }
     setErrors({});
-    mutate(
-      {
-        payload: {
-          date: dateToKey(year, month, day),
-          companion: companion.trim() || undefined,
-          recipeIds: recipes.map((r) => r.id),
-          memoTitle: memoTitle.trim() || undefined,
-          memoContent: memoContent.trim() || undefined,
+
+    if (isEdit && entryId !== undefined) {
+      const existingImageUrls = photos.filter((p) => existingUrlSet.has(p));
+      const newImageUris = photos.filter((p) => !existingUrlSet.has(p));
+      updateMutate(
+        {
+          id: entryId,
+          payload: {
+            date: currentDateKey,
+            companion: companion.trim() || undefined,
+            recipeIds: recipes.map((r) => r.id),
+            memoTitle: memoTitle.trim() || undefined,
+            memoContent: memoContent.trim() || undefined,
+          },
+          existingImageUrls,
+          newImageUris,
         },
-        imageUris: photos,
-      },
-      {
-        onSuccess: () => {
-          Alert.alert("완료", "캘린더에 기록이 저장되었습니다!", [
-            { text: "확인", onPress: () => router.back() },
-          ]);
+        {
+          onSuccess: () => {
+            Alert.alert("완료", "기록이 수정되었습니다!", [
+              { text: "확인", onPress: () => router.back() },
+            ]);
+          },
+          onError: (error: any) => {
+            const msg = error?.response?.data?.message || error.message || "수정에 실패했습니다.";
+            Alert.alert("수정 실패", msg);
+          },
+        }
+      );
+    } else {
+      createMutate(
+        {
+          payload: {
+            date: dateToKey(year, month, day),
+            companion: companion.trim() || undefined,
+            recipeIds: recipes.map((r) => r.id),
+            memoTitle: memoTitle.trim() || undefined,
+            memoContent: memoContent.trim() || undefined,
+          },
+          imageUris: photos,
         },
-        onError: (error: any) => {
-          const msg = error?.response?.data?.message || error.message || "저장에 실패했습니다.";
-          Alert.alert("저장 실패", msg);
-        },
-      }
-    );
+        {
+          onSuccess: () => {
+            Alert.alert("완료", "캘린더에 기록이 저장되었습니다!", [
+              { text: "확인", onPress: () => router.back() },
+            ]);
+          },
+          onError: (error: any) => {
+            const msg = error?.response?.data?.message || error.message || "저장에 실패했습니다.";
+            Alert.alert("저장 실패", msg);
+          },
+        }
+      );
+    }
   };
 
   return (
@@ -134,7 +200,9 @@ export default function CalendarCreateScreen() {
             onPress={handleSave}
             disabled={isPending}
           >
-            <Text style={styles.saveBtnText}>{isPending ? "저장 중..." : "저장"}</Text>
+            <Text style={styles.saveBtnText}>
+              {isPending ? (isEdit ? "수정 중..." : "저장 중...") : isEdit ? "수정" : "저장"}
+            </Text>
           </TouchableOpacity>
         }
       />
@@ -322,7 +390,7 @@ export default function CalendarCreateScreen() {
         visible={showRecipePicker}
         selectedIds={recipes.map((r) => r.id)}
         onSelect={(r) => {
-          setRecipes((prev) => [...prev, r]);
+          setRecipes((prev) => (prev.find((x) => x.id === r.id) ? prev : [...prev, r]));
           if (errors.recipes) setErrors((prev) => ({ ...prev, recipes: "" }));
         }}
         onClose={() => setShowRecipePicker(false)}

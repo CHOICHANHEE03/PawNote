@@ -34,8 +34,11 @@ export type DayEntry = {
 interface Props {
   date: Date;
   entry?: DayEntry;
+  entryId?: number;
   loading?: boolean;
   onRecipePress?: (id: number) => void;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
 }
 
 function formatDateTitle(date: Date) {
@@ -58,7 +61,7 @@ function Divider() {
 }
 
 // 메인 
-export default function DayContent({ date, entry, loading, onRecipePress }: Props) {
+export default function DayContent({ date, entry, entryId, loading, onRecipePress, onEditPress, onDeletePress }: Props) {
   const hasPhotos = (entry?.photos?.length ?? 0) > 0;
   const hasCompanion = !!entry?.companion;
   const hasRecipes = (entry?.recipes?.length ?? 0) > 0;
@@ -79,6 +82,18 @@ export default function DayContent({ date, entry, loading, onRecipePress }: Prop
       <View style={styles.dateHeader}>
         <View style={styles.dateDot} />
         <Text style={styles.dateTitle}>{formatDateTitle(date)}</Text>
+        {hasAny && (
+          <View style={styles.dateActions}>
+            <TouchableOpacity style={styles.editBtn} onPress={onEditPress}>
+              <MaterialIcons name="edit" size={13} color="#888" />
+              <Text style={styles.editBtnText}>수정</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteBtn} onPress={onDeletePress}>
+              <MaterialIcons name="delete-outline" size={13} color="#e57373" />
+              <Text style={styles.deleteBtnText}>삭제</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {!hasAny ? (
@@ -210,6 +225,44 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#1a1a1a",
+    flex: 1,
+  },
+  dateActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  editBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e0dcd6",
+    backgroundColor: "#fff",
+  },
+  editBtnText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#888",
+  },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#f5c6c6",
+    backgroundColor: "#fff9f9",
+  },
+  deleteBtnText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#e57373",
   },
 
   // 빈 상태 
