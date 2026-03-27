@@ -74,7 +74,7 @@ export default function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 50 }}>
         <MonthCalendar
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}

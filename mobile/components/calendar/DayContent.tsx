@@ -197,7 +197,6 @@ export default function DayContent({ date, entry, entryId, loading, onRecipePres
         </View>
       )}
 
-      <View style={{ height: 100 }} />
     </View>
   );
 }
