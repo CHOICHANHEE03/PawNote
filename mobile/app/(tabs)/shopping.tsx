@@ -1,8 +1,10 @@
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
+import { Swipeable } from "react-native-gesture-handler";
 import CreateButton from "@/components/common/createButton";
 import { useShoppingLists } from "@/hooks/shopping/useShoppingLists";
+import { useDeleteShoppingList } from "@/hooks/shopping/useDeleteShoppingList";
 
 function formatDate(isoString: string): string {
     const d = new Date(isoString);
@@ -12,8 +14,16 @@ function formatDate(isoString: string): string {
 export default function ShoppingScreen() {
     const router = useRouter();
     const { data: lists, isLoading } = useShoppingLists();
+    const { mutate: deleteList } = useDeleteShoppingList();
 
     const isEmpty = !lists || lists.length === 0;
+
+    const renderRightActions = (id: number) => (
+        <TouchableOpacity style={styles.deleteAction} onPress={() => deleteList(id)}>
+            <MaterialIcons name="delete" size={24} color="#fff" />
+            <Text style={styles.deleteText}>삭제</Text>
+        </TouchableOpacity>
+    );
 
     return (
         <View style={styles.container}>
@@ -33,16 +43,18 @@ export default function ShoppingScreen() {
                     keyExtractor={(item) => String(item.id)}
                     contentContainerStyle={styles.listContent}
                     renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={styles.card}
-                            activeOpacity={0.75}
-                            onPress={() => router.push(`/shopping/${item.id}` as any)}
-                        >
-                            <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-                            <View style={styles.cardMeta}>
-                                <Text style={styles.cardDate}>{formatDate(item.updatedAt)}</Text>
-                            </View>
-                        </TouchableOpacity>
+                        <Swipeable renderRightActions={() => renderRightActions(item.id)}>
+                            <TouchableOpacity
+                                style={styles.card}
+                                activeOpacity={0.75}
+                                onPress={() => router.push(`/shopping/${item.id}` as any)}
+                            >
+                                <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+                                <View style={styles.cardMeta}>
+                                    <Text style={styles.cardDate}>{formatDate(item.updatedAt)}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </Swipeable>
                     )}
                 />
             )}
@@ -104,6 +116,18 @@ const styles = StyleSheet.create({
     emptySubText: {
         fontSize: 12,
         color: "#ccc",
+    },
+    deleteAction: {
+        backgroundColor: "#e53935",
+        justifyContent: "center",
+        alignItems: "center",
+        width: 72,
+        borderRadius: 14,
+    },
+    deleteText: {
+        color: "#fff",
+        fontSize: 12,
+        marginTop: 2,
     },
     fabArea: {
         position: "absolute",

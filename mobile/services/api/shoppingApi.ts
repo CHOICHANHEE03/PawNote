@@ -77,6 +77,14 @@ export async function updateShoppingList({
     return response.json();
 }
 
+export async function deleteShoppingList(id: number, accessToken: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/shopping-lists/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) throw new Error("장보기 목록 삭제 실패");
+}
+
 export async function createShoppingList({ payload, accessToken }: CreateShoppingListParams) {
     const response = await fetch(`${API_BASE_URL}/shopping-lists`, {
         method: "POST",
