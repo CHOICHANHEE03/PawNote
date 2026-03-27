@@ -10,7 +10,7 @@ import java.util.List;
 @Setter
 public class CalendarCreateRequest {
     private LocalDate date;
-    private String withWhom;
+    private String companion;
     private List<Long> recipeIds;
     private String memoTitle;
     private String memoContent;

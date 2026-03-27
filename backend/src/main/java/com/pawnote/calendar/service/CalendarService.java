@@ -1,6 +1,7 @@
 package com.pawnote.calendar.service;
 
 import com.pawnote.calendar.dto.CalendarCreateRequest;
+import com.pawnote.calendar.dto.CalendarEntryResponse;
 import com.pawnote.calendar.entity.CalendarEntry;
 import com.pawnote.calendar.entity.CalendarEntryImage;
 import com.pawnote.calendar.entity.CalendarEntryRecipe;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +26,20 @@ public class CalendarService {
 
     private final CalendarEntryRepository calendarEntryRepository;
     private final FileStorageService fileStorageService;
+
+    @Transactional(readOnly = true)
+    public List<CalendarEntryResponse> getAll(Long userId) {
+        return calendarEntryRepository.findAllByUserIdOrderByDateDescCreatedAtDesc(userId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CalendarEntryResponse> getByDate(Long userId, LocalDate date) {
+        return calendarEntryRepository.findAllByUserIdAndDateOrderByCreatedAtDesc(userId, date).stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
     @Transactional
     public Long create(Long userId, CalendarCreateRequest request, List<MultipartFile> images) throws IOException {
@@ -37,7 +53,7 @@ public class CalendarService {
         CalendarEntry entry = CalendarEntry.builder()
                 .userId(userId)
                 .date(request.getDate())
-                .withWhom(trimToNull(request.getWithWhom()))
+                .companion(resolveCompanion(request))
                 .memoTitle(trimToNull(request.getMemoTitle()))
                 .memoContent(trimToNull(request.getMemoContent()))
                 .build();
@@ -75,6 +91,27 @@ public class CalendarService {
         }
 
         return calendarEntryRepository.save(entry).getId();
+    }
+
+    private CalendarEntryResponse toResponse(CalendarEntry entry) {
+        return new CalendarEntryResponse(
+                entry.getId(),
+                entry.getDate(),
+                entry.getCompanion(),
+                entry.getRecipes().stream().map(CalendarEntryRecipe::getRecipeId).toList(),
+                entry.getMemoTitle(),
+                entry.getMemoContent(),
+                entry.getImages().stream()
+                        .map(CalendarEntryImage::getImagePath)
+                        .map(fileStorageService::toPublicUrl)
+                        .toList(),
+                entry.getCreatedAt(),
+                entry.getUpdatedAt()
+        );
+    }
+
+    private String resolveCompanion(CalendarCreateRequest request) {
+        return trimToNull(request.getCompanion());
     }
 
     private String trimToNull(String value) {

@@ -1,5 +1,39 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
+export type CalendarEntryResponse = {
+  id: number;
+  date: string;
+  companion?: string;
+  recipeIds: number[];
+  memoTitle?: string;
+  memoContent?: string;
+  imageUrls: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function getCalendarEntries({ accessToken }: { accessToken: string }): Promise<CalendarEntryResponse[]> {
+  const response = await fetch(`${API_BASE_URL}/api/calendar`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) throw new Error("캘린더 목록 조회 실패");
+  return response.json();
+}
+
+export async function getCalendarDayEntries({
+  date,
+  accessToken,
+}: {
+  date: string;
+  accessToken: string;
+}): Promise<CalendarEntryResponse[]> {
+  const response = await fetch(`${API_BASE_URL}/api/calendar/date/${date}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) throw new Error("캘린더 일별 조회 실패");
+  return response.json();
+}
+
 export type CalendarCreatePayload = {
   date: string;
   companion?: string;

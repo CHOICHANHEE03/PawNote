@@ -41,8 +41,8 @@ public class CalendarEntry {
     @Column(name = "entry_date", nullable = false)
     private LocalDate date;
 
-    @Column(name = "with_whom", length = 100)
-    private String withWhom;
+    @Column(name = "companion", length = 100)
+    private String companion;
 
     @Column(name = "memo_title", length = 120)
     private String memoTitle;
