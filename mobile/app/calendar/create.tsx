@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import BackHeader from "@/components/header/BackHeader";
 import { useCreateCalendarEntry } from "@/hooks/calendar/useCreateCalendarEntry";
+import { useCalendarDayEntry } from "@/hooks/calendar/useCalendarDayEntry";
 import {
   ORANGE,
   MAX_PHOTOS,
@@ -49,6 +50,10 @@ export default function CalendarCreateScreen() {
 
   const { mutate, isPending } = useCreateCalendarEntry();
 
+  const selectedDate = new Date(year, month, day);
+  const { data: existingEntries = [] } = useCalendarDayEntry(selectedDate);
+  const isDuplicate = existingEntries.length > 0;
+
   const handleMonthChange = (m: number) => {
     setMonth(m);
     const max = getDaysInMonth(year, m);
@@ -80,6 +85,10 @@ export default function CalendarCreateScreen() {
   };
 
   const handleSave = () => {
+    if (isDuplicate) {
+      Alert.alert("중복 기록", "해당 날짜에 이미 기록이 있습니다.\n날짜를 변경하거나 기존 기록을 확인해주세요.");
+      return;
+    }
     const newErrors: Record<string, string> = {};
     if (photos.length === 0) newErrors.photos = "사진을 1장 이상 추가해주세요.";
     if (!companion.trim()) newErrors.companion = "함께한 사람을 입력해주세요.";
@@ -121,7 +130,7 @@ export default function CalendarCreateScreen() {
       <BackHeader
         right={
           <TouchableOpacity
-            style={[styles.saveBtn, isPending && { opacity: 0.5 }]}
+            style={[styles.saveBtn, (isPending || isDuplicate) && { opacity: 0.5 }]}
             onPress={handleSave}
             disabled={isPending}
           >
