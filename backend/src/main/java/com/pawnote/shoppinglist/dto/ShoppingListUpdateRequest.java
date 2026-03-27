@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class ShoppingListCreateRequest {
+public class ShoppingListUpdateRequest {
     private String title;
     private List<ShoppingListItemRequest> items;
 }

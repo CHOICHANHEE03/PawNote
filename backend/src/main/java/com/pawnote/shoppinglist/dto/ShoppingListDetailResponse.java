@@ -3,7 +3,7 @@ package com.pawnote.shoppinglist.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record ShoppingListCreateResponse(
+public record ShoppingListDetailResponse(
         Long id,
         Long userId,
         String title,

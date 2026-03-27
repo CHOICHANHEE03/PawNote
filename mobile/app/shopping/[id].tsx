@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+    ActivityIndicator,
     BackHandler,
     KeyboardAvoidingView,
     Platform,
@@ -12,9 +13,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import BackHeader from "@/components/header/BackHeader";
-import { useCreateShoppingList } from "@/hooks/shopping/useCreateShoppingList";
+import { useShoppingListDetail } from "@/hooks/shopping/useShoppingListDetail";
+import { useUpdateShoppingList } from "@/hooks/shopping/useUpdateShoppingList";
 import RecipeImportModal from "@/components/shopping/RecipeImportModal";
 
 type ItemType = "check" | "category";
@@ -26,7 +28,7 @@ type ShoppingItem = {
     type: ItemType;
 };
 
-let nextItemId = 1;
+let nextItemId = 10000;
 
 type Section = {
     categoryId: number | null;
@@ -49,22 +51,46 @@ function buildSections(flatItems: ShoppingItem[]): Section[] {
     return sections;
 }
 
-export default function ShoppingCreateScreen() {
+export default function ShoppingDetailScreen() {
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const listId = Number(id);
+
+    const { data, isLoading } = useShoppingListDetail(listId);
+    const { mutateAsync } = useUpdateShoppingList();
+    const insets = useSafeAreaInsets();
+
+    const [initialized, setInitialized] = useState(false);
     const [title, setTitle] = useState("");
-    const [items, setItems] = useState<ShoppingItem[]>(() => [
-        { id: nextItemId++, text: "", checked: false, type: "category" },
-        { id: nextItemId++, text: "", checked: false, type: "check" },
-    ]);
+    const [items, setItems] = useState<ShoppingItem[]>([]);
     const [importModalVisible, setImportModalVisible] = useState(false);
     const [pendingFocusId, setPendingFocusId] = useState<number | null>(null);
-    const insets = useSafeAreaInsets();
-    const { mutateAsync } = useCreateShoppingList();
     const inputRefs = useRef<Map<number, TextInput>>(new Map());
 
     const titleRef = useRef(title);
     const itemsRef = useRef(items);
     useEffect(() => { titleRef.current = title; }, [title]);
     useEffect(() => { itemsRef.current = items; }, [items]);
+
+    // 백엔드 데이터 로드되면 초기화
+    useEffect(() => {
+        if (data && !initialized) {
+            setTitle(data.title);
+            const loaded: ShoppingItem[] = data.items
+                .slice()
+                .sort((a, b) => a.itemOrder - b.itemOrder)
+                .map((item) => ({
+                    id: nextItemId++,
+                    text: item.text,
+                    checked: item.checked,
+                    type: item.type as ItemType,
+                }));
+            setItems(loaded.length > 0 ? loaded : [
+                { id: nextItemId++, text: "", checked: false, type: "category" },
+                { id: nextItemId++, text: "", checked: false, type: "check" },
+            ]);
+            setInitialized(true);
+        }
+    }, [data, initialized]);
 
     useEffect(() => {
         if (pendingFocusId !== null) {
@@ -73,20 +99,18 @@ export default function ShoppingCreateScreen() {
         }
     }, [pendingFocusId, items]);
 
-    const hasData = () =>
-        titleRef.current.trim().length > 0 || itemsRef.current.some((i) => i.text.trim().length > 0);
-
     const saveAndLeave = async () => {
-        if (hasData()) {
-            try {
-                await mutateAsync({
+        try {
+            await mutateAsync({
+                id: listId,
+                payload: {
                     title: titleRef.current.trim() || "새로운 장보기",
                     items: itemsRef.current
                         .filter((i) => i.text.trim().length > 0)
                         .map(({ text, checked, type }) => ({ text, checked, type })),
-                });
-            } catch { }
-        }
+                },
+            });
+        } catch { }
         router.back();
     };
 
@@ -100,7 +124,6 @@ export default function ShoppingCreateScreen() {
         else inputRefs.current.delete(id);
     };
 
-    // 체크 항목 백스페이스: 빈 칸이면 삭제 / 해당 카테고리의 마지막 항목이면 카테고리도 삭제
     const handleCheckBackspace = (id: number) => {
         setItems((prev) => {
             const idx = prev.findIndex((i) => i.id === id);
@@ -109,29 +132,24 @@ export default function ShoppingCreateScreen() {
             let removeFrom = idx;
             let removeTo = idx;
 
-            // 이 체크 항목이 속한 카테고리 찾기
             let catIdx = -1;
             for (let i = idx - 1; i >= 0; i--) {
                 if (prev[i].type === "category") { catIdx = i; break; }
             }
 
             if (catIdx !== -1) {
-                // 이 카테고리 내 체크 항목이 이것뿐인지 확인
                 const nextCatIdx = prev.findIndex((i, ii) => ii > catIdx && i.type === "category");
                 const end = nextCatIdx === -1 ? prev.length : nextCatIdx;
                 const checkItemsInCat = prev.slice(catIdx + 1, end).filter((i) => i.type === "check");
                 if (checkItemsInCat.length <= 1) {
-                    // 마지막 항목이므로 카테고리도 함께 삭제
                     removeFrom = catIdx;
                     removeTo = idx;
                 }
             }
 
-            // 삭제 결과가 완전히 빈 배열이 되면 막기
             const afterDelete = prev.filter((_, ii) => ii < removeFrom || ii > removeTo);
             if (afterDelete.length === 0) return prev;
 
-            // 포커스를 이전 항목으로 이동
             const prevFocusItem = prev[removeFrom - 1];
             if (prevFocusItem) setPendingFocusId(prevFocusItem.id);
 
@@ -139,7 +157,6 @@ export default function ShoppingCreateScreen() {
         });
     };
 
-    // 카테고리 백스페이스: 빈 칸이면 카테고리 + 하위 항목 모두 삭제
     const handleCategoryBackspace = (categoryId: number) => {
         setItems((prev) => {
             const catIdx = prev.findIndex((i) => i.id === categoryId);
@@ -160,14 +177,12 @@ export default function ShoppingCreateScreen() {
     const handleTextChange = (id: number, text: string) =>
         setItems((prev) => prev.map((i) => (i.id === id ? { ...i, text } : i)));
 
-    // 마지막 카테고리 뒤에 항목 추가
     const handleAddItem = () => {
         const newId = nextItemId++;
         setItems((prev) => [...prev, { id: newId, text: "", checked: false, type: "check" }]);
         setPendingFocusId(newId);
     };
 
-    // 새 카테고리 + 빈 체크 항목 추가
     const handleAddCategory = () => {
         const catId = nextItemId++;
         const checkId = nextItemId++;
@@ -188,11 +203,18 @@ export default function ShoppingCreateScreen() {
             type: (text.startsWith("[") && text.endsWith("]") ? "category" : "check") as ItemType,
         }));
         setItems((prev) => {
-            // 기존 항목이 모두 비어있으면 교체, 아니면 추가
             const hasContent = prev.some((i) => i.text.trim().length > 0);
             return hasContent ? [...prev, ...newItems] : newItems;
         });
     };
+
+    if (isLoading || !initialized) {
+        return (
+            <View style={[styles.container, styles.centered]}>
+                <ActivityIndicator size="large" color="#F5A54C" />
+            </View>
+        );
+    }
 
     const sections = buildSections(items);
 
@@ -225,7 +247,6 @@ export default function ShoppingCreateScreen() {
                         placeholder="새로운 장보기"
                         placeholderTextColor="#bbb"
                         returnKeyType="done"
-                        autoFocus
                     />
                     <View style={styles.divider} />
 
@@ -277,7 +298,6 @@ export default function ShoppingCreateScreen() {
                         </View>
                     ))}
 
-                    {/* 하단 추가 버튼 */}
                     <View style={styles.addBtnRow}>
                         <TouchableOpacity style={styles.addBtn} onPress={handleAddCategory}>
                             <MaterialIcons name="add" size={16} color="#F5A54C" />
@@ -296,6 +316,7 @@ export default function ShoppingCreateScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#faf8f5" },
+    centered: { justifyContent: "center", alignItems: "center" },
     scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 24 },
     titleInput: {
         fontSize: 22, fontWeight: "700", color: "#1a1a1a",
@@ -311,9 +332,7 @@ const styles = StyleSheet.create({
     checkbox: { padding: 2 },
     itemInput: { flex: 1, fontSize: 16, color: "#333", paddingVertical: 4 },
     itemChecked: { textDecorationLine: "line-through", color: "#bbb" },
-    addBtnRow: {
-        flexDirection: "row", gap: 12, marginTop: 20,
-    },
+    addBtnRow: { flexDirection: "row", gap: 12, marginTop: 20 },
     addBtn: {
         flexDirection: "row", alignItems: "center", gap: 4,
         paddingVertical: 8, paddingHorizontal: 12,

@@ -1,28 +1,27 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import CreateButton from "@/components/common/createButton";
+import { useShoppingLists } from "@/hooks/shopping/useShoppingLists";
 
-type ShoppingNote = {
-    id: number;
-    title: string;
-    preview: string;
-    date: string;
-};
-
-const DUMMY: ShoppingNote[] = [
-    { id: 1, title: "이번 주 장보기", preview: "닭가슴살, 브로콜리, 고구마, 두유...", date: "3월 25일" },
-    { id: 2, title: "간식 재료", preview: "그릭요거트, 견과류 믹스, 바나나", date: "3월 22일" },
-    { id: 3, title: "소스류 채우기", preview: "간장, 참기름, 굴소스, 올리브오일", date: "3월 18일" },
-];
+function formatDate(isoString: string): string {
+    const d = new Date(isoString);
+    return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
 
 export default function ShoppingScreen() {
     const router = useRouter();
-    const isEmpty = DUMMY.length === 0;
+    const { data: lists, isLoading } = useShoppingLists();
+
+    const isEmpty = !lists || lists.length === 0;
 
     return (
         <View style={styles.container}>
-            {isEmpty ? (
+            {isLoading ? (
+                <View style={styles.empty}>
+                    <ActivityIndicator size="large" color="#F5A54C" />
+                </View>
+            ) : isEmpty ? (
                 <View style={styles.empty}>
                     <MaterialIcons name="shopping-cart" size={56} color="#e0d8ce" />
                     <Text style={styles.emptyText}>아직 만든 장보기 목록이 없어요.</Text>
@@ -30,16 +29,18 @@ export default function ShoppingScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={DUMMY}
+                    data={lists}
                     keyExtractor={(item) => String(item.id)}
                     contentContainerStyle={styles.listContent}
                     renderItem={({ item }) => (
-                        <TouchableOpacity style={styles.card} activeOpacity={0.75}>
+                        <TouchableOpacity
+                            style={styles.card}
+                            activeOpacity={0.75}
+                            onPress={() => router.push(`/shopping/${item.id}` as any)}
+                        >
                             <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
                             <View style={styles.cardMeta}>
-                                <Text style={styles.cardDate}>{item.date}</Text>
-                                <Text style={styles.cardDot}>  ·  </Text>
-                                <Text style={styles.cardPreview} numberOfLines={1}>{item.preview}</Text>
+                                <Text style={styles.cardDate}>{formatDate(item.updatedAt)}</Text>
                             </View>
                         </TouchableOpacity>
                     )}
@@ -86,15 +87,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     cardDate: {
-        fontSize: 13,
-        color: "#999",
-    },
-    cardDot: {
-        fontSize: 13,
-        color: "#ccc",
-    },
-    cardPreview: {
-        flex: 1,
         fontSize: 13,
         color: "#999",
     },
