@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: CARD_MARGIN,
     paddingTop: 4,
-    paddingBottom: 100,
+    paddingBottom: 50,
   },
   cardWrapper: {
     flex: 1,
