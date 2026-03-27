@@ -29,11 +29,15 @@ public class FileStorageService {
     private String bucket;
 
     public String saveFile(MultipartFile file) throws IOException {
+        return saveFile(file, "recipes");
+    }
+
+    public String saveFile(MultipartFile file, String directory) throws IOException {
         if (file == null || file.isEmpty()) {
             return null;
         }
 
-        String objectPath = "recipes/" + UUID.randomUUID() + resolveExtension(file);
+        String objectPath = buildObjectPath(directory, file);
         byte[] bytes = file.getBytes();
         String contentType = file.getContentType();
         if (contentType == null || contentType.isBlank()) {
@@ -52,6 +56,14 @@ public class FileStorageService {
                 .block();
 
         return objectPath;
+    }
+
+    private String buildObjectPath(String directory, MultipartFile file) {
+        String normalizedDirectory = (directory == null || directory.isBlank()) ? "files" : directory.trim();
+        if (normalizedDirectory.endsWith("/")) {
+            normalizedDirectory = normalizedDirectory.substring(0, normalizedDirectory.length() - 1);
+        }
+        return normalizedDirectory + "/" + UUID.randomUUID() + resolveExtension(file);
     }
 
     public void deleteFile(String objectPath) {
