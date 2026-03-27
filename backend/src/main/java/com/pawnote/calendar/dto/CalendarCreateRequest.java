@@ -1,0 +1,17 @@
+package com.pawnote.calendar.dto;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Getter
+@Setter
+public class CalendarCreateRequest {
+    private LocalDate date;
+    private String withWhom;
+    private List<Long> recipeIds;
+    private String memoTitle;
+    private String memoContent;
+}
