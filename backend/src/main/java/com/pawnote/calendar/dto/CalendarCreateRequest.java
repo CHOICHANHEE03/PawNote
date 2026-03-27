@@ -12,6 +12,7 @@ public class CalendarCreateRequest {
     private LocalDate date;
     private String companion;
     private List<Long> recipeIds;
+    private List<String> existingImageUrls;
     private String memoTitle;
     private String memoContent;
 }
