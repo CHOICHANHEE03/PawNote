@@ -16,6 +16,7 @@ export function useKakaoLogin() {
   const pendingRoute = useRef<string | null>(null);
 
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const navigateAfterForeground = (route: string) => {
     const current = AppState.currentState;
@@ -95,6 +96,7 @@ export function useKakaoLogin() {
       await saveAccessToken(response.accessToken);
 
       setAccessToken(response.accessToken);
+      setUser({ name: response.name, email: response.email, provider: "kakao" });
 
       navigateAfterForeground("/recipe");
 
