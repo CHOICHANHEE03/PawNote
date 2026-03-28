@@ -11,6 +11,7 @@ import {
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/stores/authStore";
+import { removeAccessToken } from "@/utils/storage";
 
 const APP_VERSION = "0.0.1";
 
@@ -37,11 +38,20 @@ export default function profileScreen() {
   const router = useRouter();
   const name = useAuthStore((state) => state.name);
   const provider = useAuthStore((state) => state.provider);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const handleLogout = () => {
     Alert.alert("로그아웃", "로그아웃 하시겠어요?", [
       { text: "취소", style: "cancel" },
-      { text: "로그아웃", style: "destructive", onPress: () => { } },
+      {
+        text: "로그아웃",
+        style: "destructive",
+        onPress: async () => {
+          await removeAccessToken();
+          clearAuth();
+          router.replace("/login");
+        },
+      },
     ]);
   };
 
