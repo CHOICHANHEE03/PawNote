@@ -6,19 +6,18 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
+import { useAuthStore } from "@/stores/authStore";
 
-// 임시 더미 데이터 
-const MOCK_USER = {
-  name: "김김김",
-  provider: "google" as "google" | "kakao" | "naver",
-};
+const APP_VERSION = "0.0.1";
 
-const PROVIDER_LABEL: Record<string, { label: string }> = {
-  google: { label: "Google" },
-  kakao: { label: "카카오" },
-  naver: { label: "네이버" },
+const PROVIDER_LABEL: Record<string, string> = {
+  google: "Google",
+  kakao: "카카오",
+  naver: "네이버",
 };
 
 type MenuRow = {
@@ -26,6 +25,7 @@ type MenuRow = {
   label: string;
   onPress: () => void;
   danger?: boolean;
+  value?: string;
 };
 
 type MenuSection = {
@@ -34,8 +34,9 @@ type MenuSection = {
 };
 
 export default function profileScreen() {
-  const user = MOCK_USER;
-  const provider = PROVIDER_LABEL[user.provider];
+  const router = useRouter();
+  const name = useAuthStore((state) => state.name);
+  const provider = useAuthStore((state) => state.provider);
 
   const handleLogout = () => {
     Alert.alert("로그아웃", "로그아웃 하시겠어요?", [
@@ -59,8 +60,8 @@ export default function profileScreen() {
     {
       title: "앱 정보",
       rows: [
-        { icon: "info-outline", label: "버전 정보", onPress: () => { } },
-        { icon: "privacy-tip", label: "개인정보 처리방침", onPress: () => { } },
+        { icon: "info-outline", label: "버전 정보", onPress: () => { }, value: APP_VERSION },
+        { icon: "privacy-tip", label: "개인정보 처리방침", onPress: () => router.push("/privacy-policy") },
       ],
     },
     {
@@ -83,13 +84,19 @@ export default function profileScreen() {
         <View style={styles.avatarWrapper}>
           <MaterialIcons name="person" size={48} color="#c8bfb0" />
         </View>
-        <Text style={styles.userName}>{user.name}</Text>
-        <View style={styles.providerBadge}>
-          <View style={styles.providerDot} />
-          <Text style={styles.providerText}>
-            {provider.label}로 로그인
-          </Text>
-        </View>
+        {name ? (
+          <Text style={styles.userName}>{name}</Text>
+        ) : (
+          <ActivityIndicator size="small" color="#c8bfb0" style={{ marginBottom: 8 }} />
+        )}
+        {provider && (
+          <View style={styles.providerBadge}>
+            <View style={styles.providerDot} />
+            <Text style={styles.providerText}>
+              {PROVIDER_LABEL[provider]}로 로그인
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* 메뉴 섹션들 */}
@@ -101,8 +108,9 @@ export default function profileScreen() {
               <React.Fragment key={ri}>
                 <TouchableOpacity
                   style={styles.menuRow}
-                  onPress={row.onPress}
-                  activeOpacity={0.7}
+                  onPress={row.value ? undefined : row.onPress}
+                  activeOpacity={row.value ? 1 : 0.7}
+                  disabled={!!row.value}
                 >
                   <View style={[styles.menuIcon, row.danger && styles.menuIconDanger]}>
                     <MaterialIcons
@@ -114,7 +122,10 @@ export default function profileScreen() {
                   <Text style={[styles.menuLabel, row.danger && styles.menuLabelDanger]}>
                     {row.label}
                   </Text>
-                  <MaterialIcons name="chevron-right" size={20} color="#ccc" />
+                  {row.value
+                    ? <Text style={styles.menuValue}>{row.value}</Text>
+                    : <MaterialIcons name="chevron-right" size={20} color="#ccc" />
+                  }
                 </TouchableOpacity>
                 {ri < section.rows.length - 1 && <View style={styles.rowDivider} />}
               </React.Fragment>
@@ -135,7 +146,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // 프로필 
+  // 프로필
   profileArea: {
     alignItems: "center",
     paddingTop: 40,
@@ -185,7 +196,7 @@ const styles = StyleSheet.create({
     color: "#F5A54C",
   },
 
-  // 메뉴 섹션 
+  // 메뉴 섹션
   section: {
     marginHorizontal: 16,
     marginBottom: 16,
@@ -234,6 +245,11 @@ const styles = StyleSheet.create({
   },
   menuLabelDanger: {
     color: "#e57373",
+  },
+  menuValue: {
+    fontSize: 14,
+    color: "#aaa",
+    fontWeight: "500",
   },
   rowDivider: {
     height: 1,

@@ -12,6 +12,7 @@ export function useGoogleLogin() {
   const router = useRouter();
 
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
+  const setUser = useAuthStore((state) => state.setUser);
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -44,6 +45,7 @@ export function useGoogleLogin() {
       await saveAccessToken(auth.accessToken);
 
       setAccessToken(auth.accessToken);
+      setUser({ name: auth.name, email: auth.email, provider: "google" });
 
       router.replace("/recipe");
     } catch (error) {

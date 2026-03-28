@@ -18,6 +18,7 @@ export function useNaverLogin() {
     const pendingRoute = useRef<string | null>(null);
 
     const setAccessToken = useAuthStore((state) => state.setAccessToken);
+    const setUser = useAuthStore((state) => state.setUser);
 
     const navigateAfterForeground = (route: string) => {
         const current = AppState.currentState;
@@ -87,6 +88,7 @@ export function useNaverLogin() {
             await saveAccessToken(auth.accessToken);
 
             setAccessToken(auth.accessToken);
+            setUser({ name: auth.name, email: auth.email, provider: "naver" });
 
             navigateAfterForeground("/recipe");
         } catch (error) {
