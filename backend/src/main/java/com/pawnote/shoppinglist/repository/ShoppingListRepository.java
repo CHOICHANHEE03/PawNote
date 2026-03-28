@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface ShoppingListRepository extends JpaRepository<ShoppingList, Long> {
     List<ShoppingList> findAllByUserIdOrderByCreatedAtDesc(Long userId);
 
+    void deleteByUserId(Long userId);
+
     @EntityGraph(attributePaths = "items")
     Optional<ShoppingList> findByIdAndUserId(Long id, Long userId);
 }

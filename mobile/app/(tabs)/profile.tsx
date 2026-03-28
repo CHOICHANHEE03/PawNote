@@ -39,6 +39,7 @@ export default function profileScreen() {
   const name = useAuthStore((state) => state.name);
   const provider = useAuthStore((state) => state.provider);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const accessToken = useAuthStore((state) => state.accessToken);
 
   const handleLogout = () => {
     Alert.alert("로그아웃", "로그아웃 하시겠어요?", [
@@ -61,7 +62,24 @@ export default function profileScreen() {
       "정말 탈퇴하시겠어요?\n탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.",
       [
         { text: "취소", style: "cancel" },
-        { text: "탈퇴하기", style: "destructive", onPress: () => { } },
+        {
+          text: "탈퇴하기",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const res = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/users/me`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              if (!res.ok) throw new Error();
+              await removeAccessToken();
+              clearAuth();
+              router.replace("/login");
+            } catch {
+              Alert.alert("오류", "회원탈퇴 중 문제가 발생했습니다. 다시 시도해주세요.");
+            }
+          },
+        },
       ]
     );
   };
