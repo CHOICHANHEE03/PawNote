@@ -5,7 +5,7 @@ import { useSegments } from "expo-router";
 export default function Header() {
     const segments = useSegments();
 
-    type TabKey = "recipe" | "shopping" | "calendar" | "mypage";
+    type TabKey = "recipe" | "shopping" | "calendar" | "profile";
 
     const current = segments[1] as TabKey;
 
@@ -14,7 +14,7 @@ export default function Header() {
         recipe: "레시피",
         shopping: "장보기",
         calendar: "캘린더",
-        mypage: "마이페이지",
+        profile: "프로필",
     };
 
     const title = titles[current] || "레시피";

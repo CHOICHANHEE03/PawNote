@@ -40,9 +40,9 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
-                name="mypage"
+                name="profile"
                 options={{
-                    title: "마이",
+                    title: "프로필",
                     tabBarIcon: ({ color, size }) => (
                         <MaterialIcons name="person" size={size} color={color} />
                     ),
