@@ -1,5 +1,6 @@
 import React from "react";
 import { Text, View } from "react-native";
+import { CookingPot } from "lucide-react-native";
 import { styles } from "./detail.styles";
 import { RecipeDetail } from "./detail.types";
 
@@ -12,7 +13,10 @@ export default function StepsSection({ steps }: Props) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.stepsSectionTitle}>👨‍🍳 조리 순서</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 24 }}>
+        <CookingPot size={18} color="#1a1a1a" />
+        <Text style={[styles.stepsSectionTitle, { marginBottom: 0 }]}>조리 순서</Text>
+      </View>
 
       {sorted.map((step, index) => {
         const isLast = index === sorted.length - 1;
