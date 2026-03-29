@@ -17,12 +17,18 @@ export default function Login() {
       >
         <View style={{ alignItems: "center", width: "100%", gap: 40 }}>
           <Image
+            source={require("@/assets/images/PawNote_logo.png")}
+            style={{ width: 320, height: 80 }}
+            resizeMode="contain"
+          />
+
+          <Image
             source={require("@/assets/images/login.png")}
             style={{ width: 120, height: 120 }}
             resizeMode="contain"
           />
 
-          <View style={{ width: "100%", gap: 12 }}>
+          <View style={{ width: "100%", gap: 12, alignItems: "center" }}>
             <GoogleLoginButton />
             <NaverLoginButton />
             <KakaoLoginButton />

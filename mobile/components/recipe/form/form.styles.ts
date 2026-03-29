@@ -126,7 +126,7 @@ export const styles = StyleSheet.create({
     },
     modalTitle: { fontSize: 20, fontWeight: "700", color: "#222", marginBottom: 4 },
     modalSubtitle: { fontSize: 13, color: "#999", marginBottom: 20 },
-    categoryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+    categoryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
     categoryCard: {
         width: "47%", backgroundColor: "#fffaf5", borderRadius: 16,
         paddingVertical: 16, paddingHorizontal: 14,
