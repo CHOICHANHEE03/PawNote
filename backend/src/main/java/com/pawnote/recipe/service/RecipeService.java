@@ -4,7 +4,9 @@ import com.pawnote.common.file.FileStorageService;
 import com.pawnote.recipe.dto.RecipeCreateRequest;
 import com.pawnote.recipe.dto.RecipeDetailResponse;
 import com.pawnote.recipe.dto.RecipeListItemResponse;
-import com.pawnote.recipe.entity.*;
+import com.pawnote.recipe.entity.Recipe;
+import com.pawnote.recipe.entity.RecipeIngredient;
+import com.pawnote.recipe.entity.RecipeStep;
 import com.pawnote.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -30,9 +32,9 @@ public class RecipeService {
     private final FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
-    public RecipeDetailResponse getRecipe(Long id) {
-        Recipe recipe = recipeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."));
+    public RecipeDetailResponse getRecipe(Long userId, Long id) {
+        Recipe recipe = recipeRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipe not found."));
 
         return new RecipeDetailResponse(
                 recipe.getId(),
@@ -59,23 +61,25 @@ public class RecipeService {
     }
 
     @Transactional(readOnly = true)
-    public List<RecipeListItemResponse> getRecipes(int page, int size) {
-        return recipeRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")))
+    public List<RecipeListItemResponse> getRecipes(Long userId, int page, int size) {
+        return recipeRepository.findAllByUserId(userId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")))
                 .stream()
                 .map(this::toListItemResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<RecipeListItemResponse> searchRecipes(String keyword, int page, int size) {
+    public List<RecipeListItemResponse> searchRecipes(Long userId, String keyword, int page, int size) {
         String trimmedKeyword = keyword == null ? "" : keyword.trim();
 
         if (trimmedKeyword.isEmpty()) {
-            return getRecipes(page, size);
+            return getRecipes(userId, page, size);
         }
 
-        return recipeRepository.findByTitleContainingIgnoreCaseOrSubtitleContainingIgnoreCase(
+        return recipeRepository.findByUserIdAndTitleContainingIgnoreCaseOrUserIdAndSubtitleContainingIgnoreCase(
+                        userId,
                         trimmedKeyword,
+                        userId,
                         trimmedKeyword,
                         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
                 )
@@ -85,22 +89,22 @@ public class RecipeService {
     }
 
     @Transactional
-    public Long createRecipe(RecipeCreateRequest request, MultipartFile image) throws Exception {
-
+    public Long createRecipe(Long userId, RecipeCreateRequest request, MultipartFile image) throws Exception {
         boolean hasImage = image != null && !image.isEmpty();
         boolean hasVideo = request.getVideoLink() != null && !request.getVideoLink().isBlank();
 
         if (hasImage && hasVideo) {
-            throw new IllegalArgumentException("이미지와 영상 중 하나만 등록할 수 있습니다.");
+            throw new IllegalArgumentException("Only one of image or video can be registered.");
         }
 
         if (!hasImage && !hasVideo) {
-            throw new IllegalArgumentException("이미지 또는 영상 중 하나는 필수입니다.");
+            throw new IllegalArgumentException("Either image or video is required.");
         }
 
         String imagePath = fileStorageService.saveFile(image);
 
         Recipe recipe = Recipe.builder()
+                .userId(userId)
                 .title(request.getTitle())
                 .subtitle(request.getSubtitle())
                 .servings(request.getServings())
@@ -134,15 +138,15 @@ public class RecipeService {
     }
 
     @Transactional
-    public Long updateRecipe(Long id, RecipeCreateRequest request, MultipartFile image) throws Exception {
-        Recipe recipe = recipeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."));
+    public Long updateRecipe(Long userId, Long id, RecipeCreateRequest request, MultipartFile image) throws Exception {
+        Recipe recipe = recipeRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipe not found."));
 
         boolean hasImage = image != null && !image.isEmpty();
         boolean hasVideo = request.getVideoLink() != null && !request.getVideoLink().isBlank();
 
         if (hasImage && hasVideo) {
-            throw new IllegalArgumentException("이미지와 영상 중 하나만 등록할 수 있습니다.");
+            throw new IllegalArgumentException("Only one of image or video can be registered.");
         }
 
         recipe.setTitle(request.getTitle());
@@ -187,9 +191,9 @@ public class RecipeService {
     }
 
     @Transactional
-    public void deleteRecipe(Long id) {
-        Recipe recipe = recipeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "레시피를 찾을 수 없습니다."));
+    public void deleteRecipe(Long userId, Long id) {
+        Recipe recipe = recipeRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipe not found."));
 
         fileStorageService.deleteFile(recipe.getImageUrl());
         recipeRepository.delete(recipe);
