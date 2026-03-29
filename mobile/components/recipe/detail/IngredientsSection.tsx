@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { UtensilsCrossed } from "lucide-react-native";
 import { styles } from "./detail.styles";
 import { IngredientGroup, scaleAmount } from "./detail.types";
 
@@ -30,7 +31,10 @@ export default function IngredientsSection({ groups, baseServings }: Props) {
     <View style={styles.section}>
       {/* 제목 + 인분 선택 */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>🥦 재료</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <UtensilsCrossed size={18} color="#1a1a1a" />
+            <Text style={styles.sectionTitle}>재료</Text>
+          </View>
         <View style={styles.servingsRow}>
           {servingOptions.map((n) => (
             <TouchableOpacity
