@@ -88,7 +88,7 @@ export default function RecipeScreen() {
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           numColumns={2}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, filtered.length === 0 && styles.listContentEmpty]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.center}>
@@ -149,6 +149,9 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 50,
   },
+  listContentEmpty: {
+    flexGrow: 1,
+  },
   cardWrapper: {
     flex: 1,
   },
@@ -156,7 +159,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 80,
     gap: 10,
   },
   loadingText: {
