@@ -33,12 +33,12 @@ export const CATEGORY_UNITS: Record<string, IngredientUnit[]> = {
 };
 
 export const CATEGORIES = [
-    { label: "채소/과일", emoji: "🥦" },
+    { label: "채소/과일", sub: "당근, 사과 등", emoji: "🥦" },
     { label: "단백질", sub: "고기, 해산물 등", emoji: "🥩" },
     { label: "탄수화물", sub: "밥, 면", emoji: "🍚" },
     { label: "액체", sub: "물, 육수 등", emoji: "💧" },
-    { label: "소스/조미료", emoji: "🧂" },
-    { label: "기타", emoji: "📦" },
+    { label: "소스/조미료", sub: "간장, 설탕 등", emoji: "🧂" },
+    { label: "기타", sub: "견과류, 치즈 등", emoji: "📦" },
 ] as const;
 
 // 헬퍼 함수 
