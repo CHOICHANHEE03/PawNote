@@ -106,7 +106,7 @@ PawNote/
 
 ---
 
-## ERD 다이어그램
+## ERD
 
 ![ERD Diagram](assets/images/ERD-Diagram.png)
 
